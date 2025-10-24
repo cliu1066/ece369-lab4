@@ -5,10 +5,8 @@
 // 
 //
 //
-// Student(s) Name and Last Name: FILL IN YOUR INFO HERE!
-// Candice Liu
-// Andrew Ghartey
-// Barack Marwanga Asande
+// Student(s) Name and Last Name: Candice Liu, Andrew Ghartey, Barack Marwanga Asande
+// 
 // Module - register_file.v
 // Description - Implements a register file with 32 32-Bit wide registers.
 //
