@@ -30,25 +30,51 @@ module DataMemory_tb();
     wire [31:0]ReadData;
 
     DataMemory u1(
-        .Address(Address), .WriteData(WriteData), .Clk(Clk), .MemWrite(MemWrite),
-        .MemRead(MemRead)
-    );
-        
-    initial begin
+        .Address(Address),
+        .WriteData(WriteData),
+        .Clk(Clk),
+        .MemWrite(MemWrite),
+        .MemRead(MemRead),
+        .ReadData(ReadData)
 
-	   /*@(posedge Clk);
-	   #5 Reset <= 1'b0; Address <= 32'h00000000;
-	   @(posedge Clk);
-	   #5 Address <= Address + 3;
-	   @(posedge Clk);
-	   #5 Address <= Address + 3;
-	   @(posedge Clk);
-	   #5 Address <= Address + 3;
-	   @(posedge Clk);
-	   #5 Reset <= 1'b1;
-	   @(posedge Clk);
-	   #5 Reset <= 1'b0; Address <= Address + 3;
-	 end
-   */
+    );
+    
+	initial begin
+        // Initialize inputs
+        Address = 32'h00000000;
+        WriteData = 32'h00000000;
+        MemWrite = 0;
+        MemRead = 0;
+
+        // Wait for global reset
+        #10;
+
+        // Write 0xDEADBEEF to address 0x00000004 (word index = 1)
+        Address = 32'h00000004;
+        WriteData = 32'hDEADBEEF;
+        MemWrite = 1;
+        MemRead = 0;
+        #10;
+
+        // Disable write
+        MemWrite = 0;
+
+        // Read from address 0x00000004
+        MemRead = 1;
+        #10;
+
+		// Display result
+        $display("ReadData from address 0x00000004: %h", ReadData);
+
+        // Read from address 0x00000008 (should be 0)
+        Address = 32'h00000008;
+        #10;
+        $display("ReadData from address 0x00000008: %h", ReadData);
+
+        // Finish simulation
+        $finish;
+    end
 
 endmodule
+
+
