@@ -49,6 +49,7 @@ module ALU32Bit(ALUControl, A, B, ALUResult, Zero);
             4'b1000: ALUResult = B << A[4:0];       // SLL (shift left logical)
             4'b1001: ALUResult = B >> A[4:0];       // SRL (shift right logical)
             4'b1010: ALUResult = $signed(B) >>> A[4:0]; // SRA (arithmetic shift right)
+            4'b1011: ALUResult = A * B;             // MUL
             default: ALUResult = 32'd0;             // Default
         endcase
     end
