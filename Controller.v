@@ -86,6 +86,30 @@ module Controller(OpCode, RegDst, Jump, Branch, MemRead, MemToReg, ALUOp, MemWri
                 ALUOp = 2'b01;
                 Jump = 1'b0;
             end
+
+            6'b000111 : begin // bgtz
+                RegDst = 1'b0;
+                ALUSrc = 1'b0;
+                MemToReg= 1'b0;
+                RegWrite= 1'b0;
+                MemRead = 1'b0;
+                MemWrite= 1'b0;
+                Branch = 1'b1;
+                ALUOp = 2'b01;
+                Jump = 1'b0;
+            end
+
+            6'b000110 : begin // blez
+                RegDst = 1'b0;
+                ALUSrc = 1'b0;
+                MemToReg= 1'b0;
+                RegWrite= 1'b0;
+                MemRead = 1'b0;
+                MemWrite= 1'b0;
+                Branch = 1'b1;
+                ALUOp = 2'b01;
+                Jump = 1'b0;
+            end
             
             6'b001110 : begin // XORI - XOR immidiate
                 RegDst = 1'b0;
@@ -99,6 +123,30 @@ module Controller(OpCode, RegDst, Jump, Branch, MemRead, MemToReg, ALUOp, MemWri
                 Jump = 1'b0;
             end
             6'b000010 : begin // j - Jump
+                RegDst = 1'b0;
+                ALUSrc = 1'b0;
+                MemToReg= 1'b0;
+                RegWrite= 1'b0;
+                MemRead = 1'b0;
+                MemWrite= 1'b0;
+                Branch = 1'b0;
+                ALUOp = 2'b00;
+                Jump = 1'b1;
+            end
+
+            6'b000000 : begin // jr - Jump register
+                RegDst = 1'b0;
+                ALUSrc = 1'b0;
+                MemToReg= 1'b0;
+                RegWrite= 1'b0;
+                MemRead = 1'b0;
+                MemWrite= 1'b0;
+                Branch = 1'b0;
+                ALUOp = 2'b00;
+                Jump = 1'b1;
+            end
+
+            6'b000011 : begin // jal - Jump and link
                 RegDst = 1'b0;
                 ALUSrc = 1'b0;
                 MemToReg= 1'b0;
