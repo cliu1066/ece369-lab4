@@ -29,7 +29,7 @@
 module ALU32Bit(ALUControl, A, B, ALUResult, Zero);
 
 	input [3:0] ALUControl; // control bits for ALU operation
-                                // you need to adjust the bitwidth as needed
+                            // you need to adjust the bitwidth as needed
 	input [31:0] A, B;	    // inputs
 
 	output reg [31:0] ALUResult;	// answer - added reg here
@@ -39,18 +39,23 @@ module ALU32Bit(ALUControl, A, B, ALUResult, Zero);
     always @(*) begin
         case (ALUControl)
         // 4 to reprsent 4 bits in 'b' binary and the numbers are the control signals code        
-            4'b0000: ALUResult = A & B;             // AND
-            4'b0001: ALUResult = A | B;             // OR
-            4'b0010: ALUResult = A + B;             // ADD
-            4'b0110: ALUResult = A - B;             // SUB
-            4'b0111: ALUResult = (A < B) ? 32'd1 : 32'd0; // SLT
-            4'b1100: ALUResult = ~(A | B);          // NOR
-            4'b0011: ALUResult = A ^ B;             // XOR (optional)
-            4'b1000: ALUResult = B << A[4:0];       // SLL (shift left logical)
-            4'b1001: ALUResult = B >> A[4:0];       // SRL (shift right logical)
-            4'b1010: ALUResult = $signed(B) >>> A[4:0]; // SRA (arithmetic shift right)
-            4'b1011: ALUResult = A * B;             // MUL
-            default: ALUResult = 32'd0;             // Default
+            4'b0000: ALUResult = A & B;                    // AND
+            4'b0001: ALUResult = A | B;                    // OR
+            4'b0010: ALUResult = A + B;                    // ADD
+            4'b0011: ALUResult = A - B;                    // SUB
+            4'b0100: ALUResult = (A < B) ? 32'd1 : 32'd0;  // SLT
+            4'b0101: ALUResult = ~(A | B);                 // NOR
+            4'b0110: ALUResult = A ^ B;                    // XOR
+            4'b0111: ALUResult = B << A[4:0];              // SLL (shift left logical)
+            4'b1000: ALUResult = B >> A[4:0];              // SRL (shift right logical)
+            4'b1001: ALUResult = A * B;                    // MUL
+            4'b1010: ALUResult = (A >= 0) ? 32'd1 : 32'd0; // BGEZ
+            4'b1011: ALUResult = (A == B) ? 32'd1 : 32'd0; // BEQ
+            4'b1100: ALUResult = (A != B) ? 32'd1 : 32'd0; // BNE
+            4'b1101: ALUResult = (A > 0) ? 32'd1 : 32'd0;  // BGTZ
+            4'b1110: ALUResult = (A <= 0) ? 32'd1 : 32'd0; // BLEZ
+            4'b1111: ALUResult = (A < 0) ? 32'd1 : 32'd0;  // BLTZ
+            default: ALUResult = 32'd0;                    // Default
         endcase
     end
 
