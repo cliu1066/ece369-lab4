@@ -89,7 +89,17 @@ module Top(Clk, Rst);
     //output to RegDst mux in EX stage of pipeline
     Mux32Bit2To1(EX_RegDst_Out, ID_EX_Rt, ID_EX_Rd, ID_EX_RegDst);
 
-    //ALU
+    //Shift left 2
+    wire [31:0] SLL_Out;
+    ALU32Bit(4'b0111, 32'd2, ID_EX_Imm_SE , SLL_Out, 1'b0);
+
+    //Adder
+    wire [31:0] Add_Result;
+    ALU32Bit(4'b0010, ID_EX_PC_AddResult, SLL_Out, Add_Result, 1'b0);
+
+    //ALUSrc Mux
+    wire [31:0] ALUS
+    
     
     
     
