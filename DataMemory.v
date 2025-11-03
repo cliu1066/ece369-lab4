@@ -45,13 +45,16 @@ module DataMemory(Address, WriteData, Clk, MemWrite, MemRead, ReadData);
 
     output reg[31:0] ReadData; // Contents of memory location at Address
 
-    /* Please fill in the implementation here */
     // memory array
     reg [31:0] memory [0:1023];
 
     // Read data
     // Word index (use bits [11:2] for byte addressing)
     wire [9:0] word_index = Address[11:2];
+    
+    initial begin
+        $readmemh("data_memory.mem", memory);
+    end
     
     always @(*) begin
         if (MemRead)

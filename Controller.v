@@ -39,6 +39,7 @@ module Controller(OpCode, Funct, RegDst, Jump, Branch, MemRead, MemToReg, ALUOp,
                     6'b000000 : ALUOp = 4'b0111; // sll
                     6'b000010 : ALUOp = 4'b1000; // srl
                     6'b101010 : ALUOp = 4'b0100; // slt
+                    default : ALUOp = 4'b0010; // add
                 endcase
             end
             
