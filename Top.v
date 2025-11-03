@@ -19,19 +19,36 @@
 // 
 ////////////////////////////////////////////////////////////////////////////////
 
-module Top(Clk, Rst, WriteData);
+module Top(Clk, Rst);
     input Clk, Rst;
-    output reg [31:0] WriteData;
     
-    wire [31:0] PCIn, PCOut;
-    wire [5:0] OpCode, Funct;
-    
-    wire [31:0] Instruction, ID_Instruction, EX_Instruction;
+    wire [31:0] PC_In, PC_Out, PC_AddResult;
+    wire [31:0] Instruction;
     wire [31:0] JumpAddress;
     
-    // Extend
-    wire [15:0] Imm16;
-    wire [31:0] Imm16_Ext, EX_Imm16_Ext;
+    // Instruction Fetch
+    ProgramCounter m1(PC_In, PC_Out, Rst, Clk);
+    PCAdder m2(PC_Out, PC_AddResult);
+    InstructionMemory m3(PC_AddResult, Instruction);
+    
+    // PCSrc Mux
+    Mux32Bit2To1 m4(PC_Out, PC_AddResult, JumpAddress, PCSrc);
+    
+    // IF/ID
+    wire [31:0] IF_ID_PC_Out, IF_ID_Instruction_Out;
+    IF_ID_Reg m5(Clk, Rst, Instruction, PC_AddResult, IF_ID_PC_Out, IF_ID_Instruction_Out);
+    
+    // RegisterFile
+    wire RegWrite;
+    wire [4:0] ReadRegister1, ReadRegister2;
+    wire [4:0] MEM_WB_WriteRegister;
+    wire [31:0] RegWriteData;
+    wire [31:0] ReadData1, ReadData2;
+    RegisterFile m6(ReadRegister1, ReadRegister2, MEM_WB_WriteRegister, RegWriteData, RegWrite, Clk, ReadData1, ReadData2);
+    
+    // Sign Extend
+    wire [31:0] Imm_SE;
+    SignExtension m7(IF_ID_Instruction_Out, Imm_SE);
     
     // RegFile
     wire [4:0] Rs, Rt, Rd, EX_Rs, EX_Rt, EX_Rd, EX_WriteReg, MEM_WriteReg, WB_WriteReg;
