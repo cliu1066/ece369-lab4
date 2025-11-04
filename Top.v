@@ -108,7 +108,6 @@ module Top(Clk, Rst);
 
     //EX/MEM
     wire EX_MEM_Jump, EX_MEM_Branch, EX_MEM_MemRead, EX_MEM_MemToReg, EX_MEM_MemWrite, EX_MEM_RegWrite;
-    wire [31:0] EX_MEM_AddResult;
     wire EX_MEM_Zero;
     wire [31:0] EX_MEM_Jump_Addr;
     wire [31:0] EX_MEM_ALU_Result;
@@ -126,11 +125,21 @@ module Top(Clk, Rst);
     
     EX_MEM_RegWrite, EX_MEM_MemToReg,
     EX_MEM_Branch, EX_MEM_MemRead, EX_MEM_MemWrite, EX_MEM_Jump,
-    EX_MEM_Jump_Addr, EX_MEM_AddResult,
+    EX_MEM_Jump_Addr, JumpAddress,
     EX_MEM_Zero,
-    [31:0] EX_MEM_ALU_Result, EX_MEM_ReadData2,
+    EX_MEM_ALU_Result, EX_MEM_ReadData2,
     EX_MEM_RegDst_Out
     );
+
+    //Branch And Operation
+    ALU32Bit m16(4'b0000, EX_MEM_Branch, EX_MEM_Zero, PCSrc, 1'b0);
+
+    //Data Memory
+    wire [31:0] MEM_DataMem_ReadData;
+    DataMemory(EX_MEM_ALU_Result, EX_MEM_ReadData2, Clk, EX_MEM_MemWrite, EX_MEM_MemRead, MEM_DataMem_ReadData);
+
+    //MEM/WB
+    
     
     
     
