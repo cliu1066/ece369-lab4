@@ -74,7 +74,7 @@ module Top(Clk, Rst);
     IF_ID_Instruction_Out[25:21], IF_ID_Instruction_Out[20:16], IF_ID_Instruction_Out[15:11],
     IF_ID_Instruction_Out[5:0], IF_ID_Instruction_Out[31:26],
                  
-    ID_EX_RegWrite, ID_EX_MemToRe,
+    ID_EX_RegWrite, ID_EX_MemToReg,
     ID_EX_Branch, ID_EX_MemRead, ID_EX_MemWrite, ID_EX_Jump,
     ID_EX_RegDst, ID_EX_ALUSrc,
     ID_EX_ALUOp,
@@ -105,7 +105,32 @@ module Top(Clk, Rst);
     wire EX_ALU_Zero;
     wire [31:0] EX_ALU_Result;
     ALU32Bit m14(ID_EX_ALUOp, ID_EX_ReadData1, EX_ALUSrc_Out, EX_ALU_Result, EX_ALU_Zero);
+
+    //EX/MEM
+    wire EX_MEM_Jump, EX_MEM_Branch, EX_MEM_MemRead, EX_MEM_MemToReg, EX_MEM_MemWrite, EX_MEM_RegWrite;
+    wire [31:0] EX_MEM_AddResult;
+    wire EX_MEM_Zero;
+    wire [31:0] EX_MEM_Jump_Addr;
+    wire [31:0] EX_MEM_ALU_Result;
+    wire [31:0] EX_MEM_ReadData2;
+    wire [4:0] EX_MEM_RegDst_Out;
+
+    EX_MEM_Reg m15(
+    Clk, Rst,
+    ID_EX_RegWrite, ID_EX_MemToReg,
+    ID_EX_Branch, ID_EX_MemRead, ID_EX_MemWrite, ID_EX_Jump,
+    ID_EX_Jump_Addr, ID_EX_PC_AddResult,
+    EX_ALU_Zero,
+    EX_ALU_Result, ID_EX_ReadData2,
+    EX_RegDst_Out,
     
+    EX_MEM_RegWrite, EX_MEM_MemToReg,
+    EX_MEM_Branch, EX_MEM_MemRead, EX_MEM_MemWrite, EX_MEM_Jump,
+    EX_MEM_Jump_Addr, EX_MEM_AddResult,
+    EX_MEM_Zero,
+    [31:0] EX_MEM_ALU_Result, EX_MEM_ReadData2,
+    EX_MEM_RegDst_Out
+    );
     
     
     
