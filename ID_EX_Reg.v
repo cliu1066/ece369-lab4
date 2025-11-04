@@ -4,6 +4,7 @@ module ID_EX_Reg(
     input Clk, Rst,
     input RegWrite_In, MemToReg_In,
     input Branch_In, MemRead_In, MemWrite_In, Jump_In,
+    input JumpRegister_In, Link_In,
     input RegDst_In, ALUSrc_In,
     input [3:0] ALUOp_In,
     
@@ -14,6 +15,7 @@ module ID_EX_Reg(
     
     output reg RegWrite_Out, MemToReg_Out,
     output reg Branch_Out, MemRead_Out, MemWrite_Out, Jump_Out,
+    output reg JumpRegister_Out, Link_Out,
     output reg RegDst_Out, ALUSrc_Out,
     output reg [3:0] ALUOp_Out,
     output reg [31:0] Jump_Addr_Out, PC_Out,
@@ -30,6 +32,8 @@ module ID_EX_Reg(
             MemRead_Out <= 1'b0;
             MemWrite_Out <= 1'b0;
             Jump_Out <= 1'b0;
+            JumpRegister_Out <= 1'b0;
+            Link_Out <= 1'b0;
             RegDst_Out <= 1'b0;
             ALUSrc_Out <= 1'b0;
             ALUOp_Out <= 4'b0;
@@ -51,6 +55,8 @@ module ID_EX_Reg(
             MemRead_Out <= MemRead_In;
             MemWrite_Out <= MemWrite_In;
             Jump_Out <= Jump_In;
+            JumpRegister_Out <= JumpRegister_In;
+            Link_Out <= Link_In;
             RegDst_Out <= RegDst_In;
             ALUSrc_Out <= ALUSrc_In;
             ALUOp_Out <= ALUOp_In;

@@ -4,6 +4,7 @@ module EX_MEM_Reg(
     input Clk, Rst,
     input RegWrite_In, MemToReg_In,
     input Branch_In, MemRead_In, MemWrite_In, Jump_In,
+    input JumpRegister_In, Link_In,
     input [31:0] JumpAddr_In, BranchAddr_In,
     input ALUZero_In,
     input [31:0] ALUResult_In, ReadData2_In,
@@ -11,6 +12,7 @@ module EX_MEM_Reg(
     
     output reg RegWrite_Out, MemToReg_Out,
     output reg Branch_Out, MemRead_Out, MemWrite_Out, Jump_Out,
+    output reg JumpRegister_Out, Link_Out,
     output reg [31:0] JumpAddr_Out, BranchAddr_Out,
     output reg ALUZero_Out,
     output reg [31:0] ALUResult_Out, ReadData2_Out,
@@ -25,6 +27,8 @@ module EX_MEM_Reg(
             MemRead_Out <= 1'b0;
             MemWrite_Out <= 1'b0;
             Jump_Out <= 1'b0;
+            JumpRegister_Out <= 1'b0;
+            Link_Out <= 1'b0;
             JumpAddr_Out <= 32'b0;
             BranchAddr_Out <= 32'b0;
             ALUZero_Out <= 1'b0;
@@ -39,6 +43,8 @@ module EX_MEM_Reg(
             MemRead_Out <= MemRead_In;
             MemWrite_Out <= MemWrite_In;
             Jump_Out <= Jump_In;
+            JumpRegister_Out <= JumpRegister_In;
+            Link_Out <= Link_In;
             JumpAddr_Out <= JumpAddr_In;
             BranchAddr_Out <= BranchAddr_In;
             ALUZero_Out <= ALUZero_In;
