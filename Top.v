@@ -135,11 +135,27 @@ module Top(Clk, Rst);
     ALU32Bit m16(4'b0000, EX_MEM_Branch, EX_MEM_Zero, PCSrc, 1'b0);
 
     //Data Memory
-    wire [31:0] MEM_DataMem_ReadData;
-    DataMemory(EX_MEM_ALU_Result, EX_MEM_ReadData2, Clk, EX_MEM_MemWrite, EX_MEM_MemRead, MEM_DataMem_ReadData);
+    wire [31:0] MEM_DM_ReadData;
+    DataMemory m17(EX_MEM_ALU_Result, EX_MEM_ReadData2, Clk, EX_MEM_MemWrite, EX_MEM_MemRead, MEM_DM_ReadData);
 
     //MEM/WB
+    wire MEM_WB_MemToReg;
+    wire [31:0] MEM_WB_DM_ReadData;
+    wire [31:0] MEM_WB_ALU_Result;
     
+    MEM_WB_Reg m18(
+    Clk, Rst,
+    EX_MEM_RegWrite, EX_MEM_MemToReg,
+    MEM_DM_ReadData, EX_MEM_ALU_Result,
+    EX_MEM_RegDst_Out,
+    
+    RegWrite, MEM_WB_MemToReg,
+    MEM_WB_DM_ReadData, MEM_WB_ALU_Result,
+    MEM_WB_WriteRegister
+    );
+
+    //WB Mux
+    Mux32Bit2To1 m19(RegWriteData, MEM_WB_DM_ReadData, MEM_WB_ALU_Result, MEM_WB_MemToReg);
     
     
     
