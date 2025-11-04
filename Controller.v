@@ -5,7 +5,7 @@
 // Module - Controller.v
 // Description - Controller module for signals in datapath.
 ////////////////////////////////////////////////////////////////////////////////
-module Controller(OpCode, Funct, RegDst, Jump, Branch, MemRead, MemToReg, ALUOp, MemWrite, ALUSrc, RegWrite, Rt);
+module Controller(OpCode, Funct, RegDst, Jump, JumpRegister, Link, Branch, MemRead, MemToReg, ALUOp, MemWrite, ALUSrc, RegWrite, Rt);
 
     /* Instruction code*/
     input [5:0] OpCode, Funct;
@@ -28,6 +28,8 @@ module Controller(OpCode, Funct, RegDst, Jump, Branch, MemRead, MemToReg, ALUOp,
                 MemWrite= 1'b0;
                 Branch = 1'b0;
                 Jump = 1'b0;
+                JumpRegister = 1'b0;
+                Link = 1'b0;
                 case (Funct)
                     6'b100000 : ALUOp = 4'b0010; // add
                     6'b100010 : ALUOp = 4'b0011; // sub
@@ -54,6 +56,8 @@ module Controller(OpCode, Funct, RegDst, Jump, Branch, MemRead, MemToReg, ALUOp,
                 Branch = 1'b0;
                 ALUOp = 4'b0010;
                 Jump = 1'b0;
+                JumpRegister = 1'b0;
+                Link = 1'b0;
             end
 
             6'b001100 : begin // andi
@@ -66,6 +70,8 @@ module Controller(OpCode, Funct, RegDst, Jump, Branch, MemRead, MemToReg, ALUOp,
                 Branch = 1'b0;
                 ALUOp = 4'b0000;
                 Jump = 1'b0;
+                JumpRegister = 1'b0;
+                Link = 1'b0;
             end
 
             6'b001101 : begin // ori
@@ -78,6 +84,8 @@ module Controller(OpCode, Funct, RegDst, Jump, Branch, MemRead, MemToReg, ALUOp,
                 Branch = 1'b0;
                 ALUOp = 4'b0001;
                 Jump = 1'b0;
+                JumpRegister = 1'b0;
+                Link = 1'b0;
             end
 
             6'b001010 : begin // slti
@@ -90,6 +98,8 @@ module Controller(OpCode, Funct, RegDst, Jump, Branch, MemRead, MemToReg, ALUOp,
                 Branch = 1'b0;
                 ALUOp = 4'b0100;
                 Jump = 1'b0;
+                JumpRegister = 1'b0;
+                Link = 1'b0;
             end
 
             6'b001110 : begin // xori
@@ -102,6 +112,8 @@ module Controller(OpCode, Funct, RegDst, Jump, Branch, MemRead, MemToReg, ALUOp,
                 Branch = 1'b0;
                 ALUOp =  4'b0110;
                 Jump = 1'b0;
+                JumpRegister = 1'b0;
+                Link = 1'b0;
             end
             
             // Data
@@ -115,6 +127,8 @@ module Controller(OpCode, Funct, RegDst, Jump, Branch, MemRead, MemToReg, ALUOp,
                 Branch = 1'b0;
                 ALUOp = 4'b0010;
                 Jump = 1'b0;
+                JumpRegister = 1'b0;
+                Link = 1'b0;
             end
             
             6'b101011 : begin // sw
@@ -127,6 +141,8 @@ module Controller(OpCode, Funct, RegDst, Jump, Branch, MemRead, MemToReg, ALUOp,
                 Branch = 1'b0;
                 ALUOp = 4'b0010;
                 Jump = 1'b0;
+                JumpRegister = 1'b0;
+                Link = 1'b0;
             end
             
             6'b101000 : begin // sb
@@ -139,6 +155,8 @@ module Controller(OpCode, Funct, RegDst, Jump, Branch, MemRead, MemToReg, ALUOp,
                 Branch = 1'b0;
                 ALUOp = 4'b0010;
                 Jump = 1'b0;
+                JumpRegister = 1'b0;
+                Link = 1'b0;
             end
 
             6'b100001 : begin // lh
@@ -151,6 +169,8 @@ module Controller(OpCode, Funct, RegDst, Jump, Branch, MemRead, MemToReg, ALUOp,
                 Branch = 1'b0;
                 ALUOp = 4'b0010;
                 Jump = 1'b0;
+                JumpRegister = 1'b0;
+                Link = 1'b0;
             end
 
             6'b100000 : begin // lb
@@ -163,6 +183,8 @@ module Controller(OpCode, Funct, RegDst, Jump, Branch, MemRead, MemToReg, ALUOp,
                 Branch = 1'b0;
                 ALUOp = 4'b0010;
                 Jump = 1'b0;
+                JumpRegister = 1'b0;
+                Link = 1'b0;
             end
 
             6'b101001 : begin // sh
@@ -175,6 +197,8 @@ module Controller(OpCode, Funct, RegDst, Jump, Branch, MemRead, MemToReg, ALUOp,
                 Branch = 1'b0;
                 ALUOp = 4'b0010;
                 Jump = 1'b0;
+                JumpRegister = 1'b0;
+                Link = 1'b0;
             end
             
             // Branch
@@ -187,6 +211,8 @@ module Controller(OpCode, Funct, RegDst, Jump, Branch, MemRead, MemToReg, ALUOp,
                 MemWrite= 1'b0;
                 Branch = 1'b1;
                 Jump = 1'b0;
+                JumpRegister = 1'b0;
+                Link = 1'b0;
                 case (Rt)
                     5'b00001 : ALUOp = 4'b1010; // bgez
                     5'b00000 : ALUOp = 4'b1111; // bltz
@@ -203,6 +229,8 @@ module Controller(OpCode, Funct, RegDst, Jump, Branch, MemRead, MemToReg, ALUOp,
                 Branch = 1'b1;
                 ALUOp = 4'b1011;
                 Jump = 1'b0;
+                JumpRegister = 1'b0;
+                Link = 1'b0;
             end
             
             6'b000101 : begin // bne
@@ -215,6 +243,8 @@ module Controller(OpCode, Funct, RegDst, Jump, Branch, MemRead, MemToReg, ALUOp,
                 Branch = 1'b1;
                 ALUOp = 4'b1100;
                 Jump = 1'b0;
+                JumpRegister = 1'b0;
+                Link = 1'b0;
             end
 
             6'b000111 : begin // bgtz
@@ -227,6 +257,8 @@ module Controller(OpCode, Funct, RegDst, Jump, Branch, MemRead, MemToReg, ALUOp,
                 Branch = 1'b1;
                 ALUOp =  4'b1101;
                 Jump = 1'b0;
+                JumpRegister = 1'b0;
+                Link = 1'b0;
             end
 
             6'b000110 : begin // blez
@@ -239,6 +271,8 @@ module Controller(OpCode, Funct, RegDst, Jump, Branch, MemRead, MemToReg, ALUOp,
                 Branch = 1'b1;
                 ALUOp = 4'b1110;
                 Jump = 1'b0;
+                JumpRegister = 1'b0;
+                Link = 1'b0;
             end
 
             6'b000010 : begin // j
@@ -251,6 +285,8 @@ module Controller(OpCode, Funct, RegDst, Jump, Branch, MemRead, MemToReg, ALUOp,
                 Branch = 1'b0;
                 ALUOp = 4'b0010;
                 Jump = 1'b1;
+                JumpRegister = 1'b0;
+                Link = 1'b0;
             end
 
             6'b000000 : begin // jr
@@ -263,6 +299,8 @@ module Controller(OpCode, Funct, RegDst, Jump, Branch, MemRead, MemToReg, ALUOp,
                 Branch = 1'b0;
                 ALUOp = 4'b0010;
                 Jump = 1'b1;
+                JumpRegister = 1'b1;
+                Link = 1'b0;
             end
 
             6'b000011 : begin // jal
@@ -275,6 +313,8 @@ module Controller(OpCode, Funct, RegDst, Jump, Branch, MemRead, MemToReg, ALUOp,
                 Branch = 1'b0;
                 ALUOp = 4'b0010;
                 Jump = 1'b1;
+                JumpRegister = 1'b0;
+                Link = 1'b1;
             end
 
             default : begin 
@@ -287,6 +327,8 @@ module Controller(OpCode, Funct, RegDst, Jump, Branch, MemRead, MemToReg, ALUOp,
                 Branch = 1'b0;
                 ALUOp = 4'b0010;
                 Jump = 1'b0;
+                JumpRegister = 1'b0;
+                Link = 1'b0;
             end
                 
         endcase
