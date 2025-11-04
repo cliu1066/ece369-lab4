@@ -55,7 +55,7 @@ module Top(Clk, Rst);
     wire [5:0] ID_EX_Funct, ID_EX_OpCode;
     ID_EX_Reg m9(Clk, Rst,
         RegWrite, MemToReg,
-        Branch, MemRead, MemWrite, Jump, JumpRegister, Link
+        Branch, MemRead, MemWrite, Jump, JumpRegister, Link,
         RegDst, ALUSrc,
         ALUOp,
         
@@ -83,7 +83,7 @@ module Top(Clk, Rst);
     // Shift left 2
     wire [31:0] SLL_Out;
     //ALU32Bit m11(4'b0111, 32'd2, ID_EX_Imm_SE , SLL_Out, 1'b0);
-    assign SLL_Out = ID_EX_IMM_SE << 2;
+    assign SLL_Out = ID_EX_Imm_SE << 2;
 
     // Branch Target Adder
     wire [31:0] Add_Result;
@@ -125,12 +125,16 @@ module Top(Clk, Rst);
 
     // PCSrc Mux
     wire [31:0] BranchTarget;
-    assign BranchTarget = AddResult;
-    assign PC_In = EX_MEM_JumpRegister ? EX_MEM_ReadData2 :
+    assign BranchTarget = Add_Result;
+    /*assign PC_In = EX_MEM_JumpRegister ? EX_MEM_ReadData2 :
                    EX_MEM_Jump ? EX_MEM_Jump_Addr :
                    (EX_MEM_Branch && EX_MEM_Zero) ? BranchTarget :
-                   PC_AddResult;
-    // FIXME: Replace with mux?
+                   PC_AddResult;*/
+    wire [1:0] PCSrc;
+    assign PCSrc = EX_MEM_JumpRegister ? 2'b10 :
+                   EX_MEM_Jump         ? 2'b01 :
+                                         2'b00;
+    Mux32Bit3To1 m21(PC_In, PC_AddResult, EX_MEM_Jump_Addr, EX_MEM_ReadData2, PCSrc);
     
     // Branch
     // ALU32Bit m16(4'b0000, EX_MEM_Branch, EX_MEM_Zero, PCSrc, 1'b0);
@@ -142,20 +146,24 @@ module Top(Clk, Rst);
     // MEM/WB
     wire MEM_WB_MemToReg, MEM_WB_Link;
     wire [31:0] MEM_WB_DM_ReadData, MEM_WB_ALU_Result, MEM_WB_PC_AddResult;
-    wire [31:0] MEM_WB_ALU_Result;
+    wire [31:0] MEM_WB_RegDst_Out;
     
     MEM_WB_Reg m18(
-    Clk, Rst,
-    EX_MEM_RegWrite, EX_MEM_MemToReg,
-    MEM_DM_ReadData, EX_MEM_ALU_Result,
-    EX_MEM_RegDst_Out,
-    
-    RegWrite, MEM_WB_MemToReg,
-    MEM_WB_DM_ReadData, MEM_WB_ALU_Result, MEM_WB_PC_AddResult,
-    MEM_WB_WriteRegister
+        Clk, Rst,
+        EX_MEM_RegWrite, EX_MEM_MemToReg, EX_MEM_Link,
+        MEM_DM_ReadData, EX_MEM_ALU_Result, EX_MEM_PC_AddResult,
+        EX_MEM_RegDst_Out,
+        
+        RegWrite, MEM_WB_MemToReg, MEM_WB_Link,
+        MEM_WB_DM_ReadData, MEM_WB_ALU_Result, MEM_WB_PC_AddResult,
+        MEM_WB_RegDst_Out
     );
 
-    // WB Mux
-    Mux32Bit2To1 m19(RegWriteData, MEM_WB_DM_ReadData, MEM_WB_ALU_Result, MEM_WB_MemToReg);
+    // WB Mux and WriteRegister Override for jal
+    assign MEM_WB_WriteRegister = MEM_WB_Link ? 5'd31 : MEM_WB_RegDst_Out;
+    assign RegWriteData = MEM_WB_Link ? MEM_WB_PC_AddResult :
+                          MEM_WB_MemToReg ? MEM_WB_DM_ReadData :
+                          MEM_WB_ALU_Result;
+    //Mux32Bit2To1 m19(RegWriteData, MEM_WB_DM_ReadData, MEM_WB_ALU_Result, MEM_WB_MemToReg);
     
 endmodule
