@@ -137,7 +137,7 @@ module Top(Clk, Rst);
     Mux32Bit3To1 m21(PC_In, PC_AddResult, EX_MEM_Jump_Addr, EX_MEM_ReadData2, PCSrc);
     
     // Branch
-    // ALU32Bit m16(4'b0000, EX_MEM_Branch, EX_MEM_Zero, PCSrc, 1'b0);
+    ALU32Bit m16(4'b0000, EX_MEM_Branch, EX_MEM_ALU_Result[0], PCSrc, 1'b0);
 
     // Data Memory
     wire [31:0] MEM_DM_ReadData;
