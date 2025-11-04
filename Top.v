@@ -125,19 +125,20 @@ module Top(Clk, Rst);
 
     // PCSrc Mux
     wire [31:0] BranchTarget;
+    wire BranchALUResult = EX_MEM_ALU_Result[0];
     assign BranchTarget = Add_Result;
-    /*assign PC_In = EX_MEM_JumpRegister ? EX_MEM_ReadData2 :
+    assign PC_In = EX_MEM_JumpRegister ? EX_MEM_ReadData2 :
                    EX_MEM_Jump ? EX_MEM_Jump_Addr :
-                   (EX_MEM_Branch && EX_MEM_Zero) ? BranchTarget :
-                   PC_AddResult;*/
-    wire [1:0] PCSrc;
+                   (EX_MEM_Branch && BranchALUResult == 1'b1) ? BranchTarget :
+                   PC_AddResult;
+    /*wire [1:0] PCSrc;
     assign PCSrc = EX_MEM_JumpRegister ? 2'b10 :
                    EX_MEM_Jump         ? 2'b01 :
                                          2'b00;
-    Mux32Bit3To1 m21(PC_In, PC_AddResult, EX_MEM_Jump_Addr, EX_MEM_ReadData2, PCSrc);
+    Mux32Bit3To1 m21(PC_In, PC_AddResult, EX_MEM_Jump_Addr, EX_MEM_ReadData2, PCSrc);*/
     
     // Branch
-    ALU32Bit m16(4'b0000, EX_MEM_Branch, EX_MEM_ALU_Result[0], PCSrc, 1'b0);
+    //ALU32Bit m16(4'b0000, EX_MEM_Branch, EX_MEM_ALU_Result[0], PCSrc, 1'b0);
 
     // Data Memory
     wire [31:0] MEM_DM_ReadData;
