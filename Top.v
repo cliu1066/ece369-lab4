@@ -5,18 +5,6 @@
 // 
 // Module - Top.v
 // Description - Top level module for MIPS 5 stage pipeline.
-//
-// INPUTS:-
-// 
-// 
-// 
-//
-// OUTPUTS:-
-// 
-// 
-//
-// FUNCTIONALITY:-
-// 
 ////////////////////////////////////////////////////////////////////////////////
 
 module Top(Clk, Rst);
@@ -49,12 +37,18 @@ module Top(Clk, Rst);
     wire [31:0] Imm_SE;
     SignExtension m7(IF_ID_Instruction_Out[15:0], Imm_SE);
 
-    //control
+    // Jump
+    // Get jump address from instruction bits
+    wire [27:0] JumpTarget;
+    assign JumpTarget = {IF_ID_Instruction_Out[25:0], 2'b00}; // shift left 2
+    assign JumpAddress = {IF_ID_PC_Out[31:28], JumpTarget}; // full 32 bit jump address
+
+    // Control
     wire RegDst, Jump, Branch, MemRead, MemToReg, MemWrite, ALUSrc;
     wire [3:0] ALUOp;
     Controller m8(IF_ID_Instruction_Out[31:26], IF_ID_Instruction_Out[5:0], RegDst, Jump, Branch, MemRead, MemToReg, ALUOp, MemWrite, ALUSrc, RegWrite, IF_ID_Instruction_Out[20:16]);
 
-    //ID/EX
+    // ID/EX
     wire ID_EX_RegDst, ID_EX_Jump, ID_EX_Branch, ID_EX_MemRead, ID_EX_MemToReg, ID_EX_MemWrite, ID_EX_ALUSrc, ID_EX_RegWrite;
     wire [3:0] ID_EX_ALUOp;
     wire [31:0] ID_EX_Jump_Addr;
@@ -84,29 +78,31 @@ module Top(Clk, Rst);
     ID_EX_Funct, ID_EX_OpCode
     );
     
-    //RegDst Mux
+    // RegDst Mux
     wire [4:0] EX_RegDst_Out; 
-    //output to RegDst mux in EX stage of pipeline
-    Mux32Bit2To1 m10(EX_RegDst_Out, ID_EX_Rt, ID_EX_Rd, ID_EX_RegDst);
+    // output to RegDst mux in EX stage of pipeline
+    //Mux32Bit2To1 m10(EX_RegDst_Out, ID_EX_Rt, ID_EX_Rd, ID_EX_RegDst);
+    assign EX_RegDst_Out = ID_EX_RegDst ? ID_EX_Rd : ID_EX_Rt;
 
-    //Shift left 2
+    // Shift left 2
     wire [31:0] SLL_Out;
-    ALU32Bit m11(4'b0111, 32'd2, ID_EX_Imm_SE , SLL_Out, 1'b0);
+    //ALU32Bit m11(4'b0111, 32'd2, ID_EX_Imm_SE , SLL_Out, 1'b0);
+    assign SLL_Out = ID_EX_IMM_SE << 2;
 
-    //Adder
+    // Adder
     wire [31:0] Add_Result;
     ALU32Bit m12(4'b0010, ID_EX_PC_AddResult, SLL_Out, Add_Result, 1'b0);
 
-    //ALUSrc Mux
+    // ALUSrc Mux
     wire [31:0] EX_ALUSrc_Out;
     Mux32Bit2To1 m13(EX_ALUSrc_Out, ID_EX_ReadData2, ID_EX_Imm_SE, ID_EX_ALUSrc);
 
-    //EX ALU
+    // EX ALU
     wire EX_ALU_Zero;
     wire [31:0] EX_ALU_Result;
     ALU32Bit m14(ID_EX_ALUOp, ID_EX_ReadData1, EX_ALUSrc_Out, EX_ALU_Result, EX_ALU_Zero);
 
-    //EX/MEM
+    // EX/MEM
     wire EX_MEM_Jump, EX_MEM_Branch, EX_MEM_MemRead, EX_MEM_MemToReg, EX_MEM_MemWrite, EX_MEM_RegWrite;
     wire EX_MEM_Zero;
     wire [31:0] EX_MEM_Jump_Addr;
@@ -131,14 +127,14 @@ module Top(Clk, Rst);
     EX_MEM_RegDst_Out
     );
 
-    //Branch And Operation
+    // Branch
     ALU32Bit m16(4'b0000, EX_MEM_Branch, EX_MEM_Zero, PCSrc, 1'b0);
 
-    //Data Memory
+    // Data Memory
     wire [31:0] MEM_DM_ReadData;
     DataMemory m17(EX_MEM_ALU_Result, EX_MEM_ReadData2, Clk, EX_MEM_MemWrite, EX_MEM_MemRead, MEM_DM_ReadData);
 
-    //MEM/WB
+    // MEM/WB
     wire MEM_WB_MemToReg;
     wire [31:0] MEM_WB_DM_ReadData;
     wire [31:0] MEM_WB_ALU_Result;
@@ -154,11 +150,7 @@ module Top(Clk, Rst);
     MEM_WB_WriteRegister
     );
 
-    //WB Mux
+    // WB Mux
     Mux32Bit2To1 m19(RegWriteData, MEM_WB_DM_ReadData, MEM_WB_ALU_Result, MEM_WB_MemToReg);
-
-    //FIXME: jump
-    
-    
     
 endmodule
