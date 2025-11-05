@@ -7,6 +7,7 @@ module ID_EX_Reg(
     input JumpRegister_In, Link_In,
     input RegDst_In, ALUSrc_In,
     input [3:0] ALUOp_In,
+    input [1:0] MemSize_In,
     
     input [31:0] Jump_Addr_In, PC_In,
     input [31:0] ReadData1, ReadData2, ImmSE_In,
@@ -18,6 +19,7 @@ module ID_EX_Reg(
     output reg JumpRegister_Out, Link_Out,
     output reg RegDst_Out, ALUSrc_Out,
     output reg [3:0] ALUOp_Out,
+    output reg [1:0] MemSize_Out,
     output reg [31:0] Jump_Addr_Out, PC_Out,
     output reg [31:0] ReadData1_Out, ReadData2_Out, ImmSE_Out,
     output reg [4:0] IF_ID_Rs_Out, IF_ID_Rt_Out, IF_ID_Rd_Out,
@@ -37,6 +39,7 @@ module ID_EX_Reg(
             RegDst_Out <= 1'b0;
             ALUSrc_Out <= 1'b0;
             ALUOp_Out <= 4'b0;
+            MemSize_Out <= 2'b0;
             Jump_Addr_Out <= 32'b0;
             PC_Out <= 32'b0;
             ReadData1_Out <= 32'b0;
@@ -60,6 +63,7 @@ module ID_EX_Reg(
             RegDst_Out <= RegDst_In;
             ALUSrc_Out <= ALUSrc_In;
             ALUOp_Out <= ALUOp_In;
+            MemSize_Out <= MemSize_In;
             Jump_Addr_Out <= Jump_Addr_In;
             PC_Out <= PC_In;
             ReadData1_Out <= ReadData1;

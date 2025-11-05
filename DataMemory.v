@@ -35,13 +35,14 @@
 // of the "Address" input to index any of the 256 words. 
 ////////////////////////////////////////////////////////////////////////////////
 
-module DataMemory(Address, WriteData, Clk, MemWrite, MemRead, ReadData); 
+module DataMemory(Address, WriteData, Clk, MemWrite, MemRead, ReadData, MemSize); 
 
     input [31:0] Address; 	// Input Address 
     input [31:0] WriteData; // Data that needs to be written into the address 
     input Clk;
     input MemWrite; 		// Control signal for memory write 
     input MemRead; 			// Control signal for memory read 
+    input [1:0] MemSize; // 00: word, 01: halfword, 10: byte
 
     output reg[31:0] ReadData; // Contents of memory location at Address
 
@@ -57,15 +58,57 @@ module DataMemory(Address, WriteData, Clk, MemWrite, MemRead, ReadData);
     end
     
     always @(*) begin
-        if (MemRead)
-            ReadData = memory[word_index];
-        else
-            ReadData = 0;
+        if (MemRead) begin
+            case (MemSize)
+                2'b00: begin // word
+                    ReadData = memory[word_index];
+                end
+                2'b01: begin // halfword
+                    if (Address[1])
+                        ReadData = {{16{memory[word_index][31]}}, memory[word_index][31:16]};
+                    else
+                        ReadData = {{16{memory[word_index][15]}}, memory[word_index][15:0]};
+                end
+                2'b10: begin // byte
+                    case (Address[1:0])
+                        2'b00: ReadData = {{24{memory[word_index][7]}},  memory[word_index][7:0]};
+                        2'b01: ReadData = {{24{memory[word_index][15]}}, memory[word_index][15:8]};
+                        2'b10: ReadData = {{24{memory[word_index][23]}}, memory[word_index][23:16]};
+                        2'b11: ReadData = {{24{memory[word_index][31]}}, memory[word_index][31:24]};
+                    endcase
+                end
+                default: ReadData = 32'b0;
+            endcase
+        end
+        else begin
+            ReadData = 32'b0;
+        end
     end
 
     // Write data
     always @(posedge Clk) begin
-        if (MemWrite)
-            memory[word_index] <= WriteData;
+        if (MemWrite) begin
+            case (MemSize)
+                2'b00: begin // word
+                    memory[word_index] <= WriteData;
+                end
+
+                2'b01: begin // halfword
+                    if (Address[1])
+                        memory[word_index][31:16] <= WriteData[15:0];
+                    else
+                        memory[word_index][15:0]  <= WriteData[15:0];
+                end
+
+                2'b10: begin // byte
+                    case (Address[1:0])
+                        2'b00: memory[word_index][7:0]   <= WriteData[7:0];
+                        2'b01: memory[word_index][15:8]  <= WriteData[7:0];
+                        2'b10: memory[word_index][23:16] <= WriteData[7:0];
+                        2'b11: memory[word_index][31:24] <= WriteData[7:0];
+                    endcase
+                end
+            endcase
+        end
     end
 endmodule

@@ -7,10 +7,11 @@
 // Description - Top level module for MIPS 5 stage pipeline.
 ////////////////////////////////////////////////////////////////////////////////
 
-module Top(Clk, Rst);
+module Top(Clk, Rst, PC_Out, RegWriteData);
     input Clk, Rst;
     
-    wire [31:0] PC_In, PC_Out, PC_AddResult;
+    wire [31:0] PC_In, PC_AddResult;
+    output wire [31:0] PC_Out;
     wire [31:0] Instruction;
     wire [31:0] JumpAddress, JumpRegAddress;
     
@@ -26,9 +27,9 @@ module Top(Clk, Rst);
     // RegisterFile
     wire RegWrite;
     wire [4:0] MEM_WB_WriteRegister;
-    wire [31:0] RegWriteData;
+    output wire [31:0] RegWriteData;
     wire [31:0] ReadData1, ReadData2;
-    RegisterFile m6(IF_ID_Instruction_Out[25:21], IF_ID_Instruction_Out[20:16], MEM_WB_WriteRegister, RegWriteData, RegWrite, Clk, ReadData1, ReadData2);
+    RegisterFile m6(IF_ID_Instruction_Out[25:21], IF_ID_Instruction_Out[20:16], MEM_WB_WriteRegister, RegWriteData, MEM_WB_RegWrite, Clk, ReadData1, ReadData2);
     
     // Sign Extend
     wire [31:0] Imm_SE;
@@ -41,12 +42,14 @@ module Top(Clk, Rst);
 
     // Control
     wire RegDst, Jump, JumpRegister, Link, Branch, MemRead, MemToReg, MemWrite, ALUSrc;
+    wire [1:0] MemSize; // 00: word, 01: halfword, 10: byte
     wire [3:0] ALUOp;
-    Controller m8(IF_ID_Instruction_Out[31:26], IF_ID_Instruction_Out[5:0], RegDst, Jump, JumpRegister, Link, Branch, MemRead, MemToReg, ALUOp, MemWrite, ALUSrc, RegWrite, IF_ID_Instruction_Out[20:16]);
-
+    Controller m8(IF_ID_Instruction_Out[31:26], IF_ID_Instruction_Out[5:0], RegDst, Jump, JumpRegister, Link, Branch, MemRead, MemToReg, ALUOp, MemWrite, MemSize, ALUSrc, RegWrite, IF_ID_Instruction_Out[20:16]);
+    
     // ID/EX
     wire ID_EX_RegDst, ID_EX_Jump, ID_EX_JumpRegister, ID_EX_Link, ID_EX_Branch, ID_EX_MemRead, ID_EX_MemToReg, ID_EX_MemWrite, ID_EX_ALUSrc, ID_EX_RegWrite;
     wire [3:0] ID_EX_ALUOp;
+    wire [1:0] ID_EX_MemSize;
     wire [31:0] ID_EX_Jump_Addr;
     wire [31:0] ID_EX_PC_AddResult;
     wire [31:0] ID_EX_ReadData1, ID_EX_ReadData2;
@@ -57,7 +60,7 @@ module Top(Clk, Rst);
         RegWrite, MemToReg,
         Branch, MemRead, MemWrite, Jump, JumpRegister, Link,
         RegDst, ALUSrc,
-        ALUOp,
+        ALUOp, MemSize,
         
         JumpAddress, IF_ID_PC_Out,
         ReadData1, ReadData2, Imm_SE,
@@ -67,7 +70,7 @@ module Top(Clk, Rst);
         ID_EX_RegWrite, ID_EX_MemToReg,
         ID_EX_Branch, ID_EX_MemRead, ID_EX_MemWrite, ID_EX_Jump, ID_EX_JumpRegister, ID_EX_Link,
         ID_EX_RegDst, ID_EX_ALUSrc,
-        ID_EX_ALUOp,
+        ID_EX_ALUOp, ID_EX_MemSize,
         ID_EX_Jump_Addr, ID_EX_PC_AddResult,
         ID_EX_ReadData1, ID_EX_ReadData2, ID_EX_Imm_SE,
         ID_EX_Rs, ID_EX_Rt, ID_EX_Rd,
@@ -87,7 +90,8 @@ module Top(Clk, Rst);
 
     // Branch Target Adder
     wire [31:0] Add_Result;
-    ALU32Bit m12(4'b0010, ID_EX_PC_AddResult, SLL_Out, Add_Result, 1'b0);
+    wire DummyZero;
+    ALU32Bit m12(4'b0010, ID_EX_PC_AddResult, SLL_Out, Add_Result, DummyZero);
 
     // ALUSrc Mux
     wire [31:0] EX_ALUSrc_Out;
@@ -101,32 +105,39 @@ module Top(Clk, Rst);
     // EX/MEM
     wire EX_MEM_Jump, EX_MEM_JumpRegister, EX_MEM_Link, EX_MEM_Branch, EX_MEM_MemRead, EX_MEM_MemToReg, EX_MEM_MemWrite, EX_MEM_RegWrite;
     wire EX_MEM_Zero;
+    wire [1:0] EX_MEM_MemSize;
     wire [31:0] EX_MEM_Jump_Addr, EX_MEM_PC_AddResult;
     wire [31:0] EX_MEM_ALU_Result;
     wire [31:0] EX_MEM_ReadData2;
+    wire [31:0] EX_MEM_BranchTarget;
     wire [4:0] EX_MEM_RegDst_Out;
 
     EX_MEM_Reg m15(
         Clk, Rst,
         ID_EX_RegWrite, ID_EX_MemToReg,
         ID_EX_Branch, ID_EX_MemRead, ID_EX_MemWrite, ID_EX_Jump, ID_EX_JumpRegister, ID_EX_Link,
+        ID_EX_RegDst,
+        ID_EX_MemSize,
         ID_EX_Jump_Addr, ID_EX_PC_AddResult,
         EX_ALU_Zero,
         EX_ALU_Result, ID_EX_ReadData2,
+        Add_Result,
         EX_RegDst_Out,
         
         EX_MEM_RegWrite, EX_MEM_MemToReg,
         EX_MEM_Branch, EX_MEM_MemRead, EX_MEM_MemWrite, EX_MEM_Jump, EX_MEM_JumpRegister, EX_MEM_Link,
+        EX_MEM_MemSize,
         EX_MEM_Jump_Addr, EX_MEM_PC_AddResult,
         EX_MEM_Zero,
         EX_MEM_ALU_Result, EX_MEM_ReadData2,
+        EX_MEM_BranchTarget,
         EX_MEM_RegDst_Out
     );
 
     // PCSrc Mux
     wire [31:0] BranchTarget;
     wire BranchALUResult = EX_MEM_ALU_Result[0];
-    assign BranchTarget = Add_Result;
+    assign BranchTarget = EX_MEM_BranchTarget;
     assign PC_In = EX_MEM_JumpRegister ? EX_MEM_ReadData2 :
                    EX_MEM_Jump ? EX_MEM_Jump_Addr :
                    (EX_MEM_Branch && BranchALUResult == 1'b1) ? BranchTarget :
@@ -139,25 +150,28 @@ module Top(Clk, Rst);
     
     // Branch
     //ALU32Bit m16(4'b0000, EX_MEM_Branch, EX_MEM_ALU_Result[0], PCSrc, 1'b0);
-
+    
     // Data Memory
     wire [31:0] MEM_DM_ReadData;
-    DataMemory m17(EX_MEM_ALU_Result, EX_MEM_ReadData2, Clk, EX_MEM_MemWrite, EX_MEM_MemRead, MEM_DM_ReadData);
-
+    DataMemory m17(EX_MEM_ALU_Result, EX_MEM_ReadData2, Clk, EX_MEM_MemWrite, EX_MEM_MemRead, MEM_DM_ReadData, EX_MEM_MemSize);
+    
     // MEM/WB
-    wire MEM_WB_MemToReg, MEM_WB_Link;
+    wire MEM_WB_RegWrite, MEM_WB_MemToReg, MEM_WB_Link;
     wire [31:0] MEM_WB_DM_ReadData, MEM_WB_ALU_Result, MEM_WB_PC_AddResult;
     wire [31:0] MEM_WB_RegDst_Out;
+    wire [1:0] MEM_WB_MemSize;
     
     MEM_WB_Reg m18(
         Clk, Rst,
         EX_MEM_RegWrite, EX_MEM_MemToReg, EX_MEM_Link,
         MEM_DM_ReadData, EX_MEM_ALU_Result, EX_MEM_PC_AddResult,
         EX_MEM_RegDst_Out,
+        EX_MEM_MemSize,
         
-        RegWrite, MEM_WB_MemToReg, MEM_WB_Link,
+        MEM_WB_RegWrite, MEM_WB_MemToReg, MEM_WB_Link,
         MEM_WB_DM_ReadData, MEM_WB_ALU_Result, MEM_WB_PC_AddResult,
-        MEM_WB_RegDst_Out
+        MEM_WB_RegDst_Out,
+        MEM_WB_MemSize
     );
 
     // WB Mux and WriteRegister Override for jal

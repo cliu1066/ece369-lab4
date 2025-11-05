@@ -43,23 +43,22 @@ module ALU32Bit(ALUControl, A, B, ALUResult, Zero);
             4'b0001: ALUResult = A | B;                    // OR
             4'b0010: ALUResult = A + B;                    // ADD
             4'b0011: ALUResult = A - B;                    // SUB
-            4'b0100: ALUResult = (A < B) ? 32'd1 : 32'd0;  // SLT
+            4'b0100: ALUResult = ($signed(A) < $signed(B)) ? 32'd1 : 32'd0;  // SLT
             4'b0101: ALUResult = ~(A | B);                 // NOR
             4'b0110: ALUResult = A ^ B;                    // XOR
             4'b0111: ALUResult = B << A[4:0];              // SLL (shift left logical)
             4'b1000: ALUResult = B >> A[4:0];              // SRL (shift right logical)
             4'b1001: ALUResult = A * B;                    // MUL
-            4'b1010: ALUResult = (A >= 0) ? 32'd1 : 32'd0; // BGEZ
-            4'b1011: ALUResult = (A == B) ? 32'd1 : 32'd0; // BEQ
-            4'b1100: ALUResult = (A != B) ? 32'd1 : 32'd0; // BNE
-            4'b1101: ALUResult = (A > 0) ? 32'd1 : 32'd0;  // BGTZ
-            4'b1110: ALUResult = (A <= 0) ? 32'd1 : 32'd0; // BLEZ
-            4'b1111: ALUResult = (A < 0) ? 32'd1 : 32'd0;  // BLTZ
-            default: ALUResult = 32'd0;                    // Default
+            4'b1010: ALUResult = ($signed(A) >= 0) ? 32'd1 : 32'd0; // BGEZ
+            4'b1011: ALUResult = ($signed(A) == $signed(B)) ? 32'd1 : 32'd0; // BEQ
+            4'b1100: ALUResult = ($signed(A) != $signed(B)) ? 32'd1 : 32'd0; // BNE
+            4'b1101: ALUResult = ($signed(A) > 0) ? 32'd1 : 32'd0;  // BGTZ
+            4'b1110: ALUResult = ($signed(A) <= 0) ? 32'd1 : 32'd0; // BLEZ
+            4'b1111: ALUResult = ($signed(A) < 0) ? 32'd1 : 32'd0;  // BLTZ
+            default: ALUResult = A;                    // Default
         endcase
     end
 
     assign Zero = (ALUResult == 32'd0) ? 1'b1 : 1'b0;
             
 endmodule
-
