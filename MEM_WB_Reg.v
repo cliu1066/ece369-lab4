@@ -8,7 +8,7 @@ module MEM_WB_Reg(
     
     output reg RegWrite_Out, MemToReg_Out, Link_Out,
     output reg [31:0] DM_ReadData_Out, MEM_WB_ALU_Result, PC_AddResult_Out,
-    output reg [4:0] MEM_WB_RegDst_Out,
+    output reg [4:0] MEM_WB_Rd,
     output reg [1:0] MemSize_Out
     );
 
@@ -20,7 +20,7 @@ module MEM_WB_Reg(
             DM_ReadData_Out <= 32'b0;
             MEM_WB_ALU_Result <= 32'b0;
             PC_AddResult_Out <= 32'b0;
-            MEM_WB_RegDst_Out <= 5'b0;
+            MEM_WB_Rd <= 5'b0;
             MemSize_Out <= 2'b0;
         end
         else begin
@@ -30,8 +30,9 @@ module MEM_WB_Reg(
             DM_ReadData_Out <= DM_ReadData_In;
             MEM_WB_ALU_Result <= ALU_Result_In;
             PC_AddResult_Out <= PC_AddResult_In;
-            MEM_WB_RegDst_Out <= EX_MEM_Rd_In; // pass down correct write register
+            MEM_WB_Rd <= EX_MEM_Rd_In;
             MemSize_Out <= MemSize_In;
         end
     end
+
 endmodule

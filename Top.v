@@ -13,7 +13,7 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     wire [31:0] PC_In, PC_AddResult;
     output wire [31:0] PC_Out;
     wire [31:0] Instruction;
-    wire [31:0] JumpAddress, JumpRegAddress;
+    wire [31:0] JumpAddress;
     
     // Instruction Fetch
     ProgramCounter m1(PC_In, PC_Out, Rst, Clk);
@@ -22,14 +22,33 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     
     // IF/ID
     wire [31:0] IF_ID_PC_Out, IF_ID_Instruction_Out;
-    IF_ID_Reg m5(Clk, Rst, Instruction, PC_Out, IF_ID_PC_Out, IF_ID_Instruction_Out);
+    IF_ID_Reg m5(
+      .Clk(Clk),
+      .Rst(Rst),
+      .Instruction_In(Instruction),
+      .PC_In(PC_Out),
+      .Instruction_Out(IF_ID_Instruction_Out),
+      .PC_Out(IF_ID_PC_Out)                    
+    );
+
     
     // RegisterFile
     wire RegWrite;
     wire [4:0] MEM_WB_WriteRegister;
     output wire [31:0] RegWriteData;
     wire [31:0] ReadData1, ReadData2;
-    RegisterFile m6(IF_ID_Instruction_Out[25:21], IF_ID_Instruction_Out[20:16], MEM_WB_WriteRegister, RegWriteData, MEM_WB_RegWrite, Clk, ReadData1, ReadData2);
+    
+    RegisterFile m6 (
+        .ReadRegister1(IF_ID_Instruction_Out[25:21]),
+        .ReadRegister2(IF_ID_Instruction_Out[20:16]),
+        .WriteRegister(MEM_WB_WriteRegister),          // 5-bit
+        .WriteData(RegWriteData),
+        .RegWrite(MEM_WB_RegWrite),
+        .Clk(Clk),
+        .ReadData1(ReadData1),
+        .ReadData2(ReadData2)
+    );
+
     
     // Sign Extend
     wire [31:0] Imm_SE;
@@ -44,8 +63,24 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     wire RegDst, Jump, JumpRegister, Link, Branch, MemRead, MemToReg, MemWrite, ALUSrc;
     wire [1:0] MemSize; // 00: word, 01: halfword, 10: byte
     wire [3:0] ALUOp;
-    Controller m8(IF_ID_Instruction_Out[31:26], IF_ID_Instruction_Out[5:0], RegDst, Jump, JumpRegister, Link, Branch, MemRead, MemToReg, ALUOp, MemWrite, MemSize, ALUSrc, RegWrite, IF_ID_Instruction_Out[20:16]);
-    
+    Controller m8 (
+        .OpCode(IF_ID_Instruction_Out[31:26]),
+        .Funct (IF_ID_Instruction_Out[5:0]),
+        .RegDst(RegDst),
+        .Jump(Jump),
+        .JumpRegister(JumpRegister),
+        .Link(Link),
+        .Branch(Branch),
+        .MemRead(MemRead),
+        .MemToReg(MemToReg),
+        .ALUOp(ALUOp),
+        .MemWrite(MemWrite),
+        .MemSize(MemSize),
+        .ALUSrc(ALUSrc),
+        .RegWrite(RegWrite),
+        .Rt(IF_ID_Instruction_Out[20:16])
+    );
+
     // ID/EX
     wire ID_EX_RegDst, ID_EX_Jump, ID_EX_JumpRegister, ID_EX_Link, ID_EX_Branch, ID_EX_MemRead, ID_EX_MemToReg, ID_EX_MemWrite, ID_EX_ALUSrc, ID_EX_RegWrite;
     wire [3:0] ID_EX_ALUOp;
@@ -62,7 +97,7 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
         RegDst, ALUSrc,
         ALUOp, MemSize,
         
-        JumpAddress, IF_ID_PC_Out,
+        JumpAddress, PC_AddResult,
         ReadData1, ReadData2, Imm_SE,
         IF_ID_Instruction_Out[25:21], IF_ID_Instruction_Out[20:16], IF_ID_Instruction_Out[15:11],
         IF_ID_Instruction_Out[5:0], IF_ID_Instruction_Out[31:26],
@@ -103,35 +138,54 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     ALU32Bit m14(ID_EX_ALUOp, ID_EX_ReadData1, EX_ALUSrc_Out, EX_ALU_Result, EX_ALU_Zero);
 
     // EX/MEM
+    wire [31:0] EX_MEM_BranchAddr;
     wire EX_MEM_Jump, EX_MEM_JumpRegister, EX_MEM_Link, EX_MEM_Branch, EX_MEM_MemRead, EX_MEM_MemToReg, EX_MEM_MemWrite, EX_MEM_RegWrite;
-    wire EX_MEM_Zero;
+    wire EX_MEM_ALUZero;
     wire [1:0] EX_MEM_MemSize;
     wire [31:0] EX_MEM_Jump_Addr, EX_MEM_PC_AddResult;
     wire [31:0] EX_MEM_ALU_Result;
     wire [31:0] EX_MEM_ReadData2;
     wire [31:0] EX_MEM_BranchTarget;
-    wire [4:0] EX_MEM_RegDst_Out;
+    wire [4:0] EX_MEM_Rd;
 
-    EX_MEM_Reg m15(
-        Clk, Rst,
-        ID_EX_RegWrite, ID_EX_MemToReg,
-        ID_EX_Branch, ID_EX_MemRead, ID_EX_MemWrite, ID_EX_Jump, ID_EX_JumpRegister, ID_EX_Link,
-        ID_EX_RegDst,
-        ID_EX_MemSize,
-        ID_EX_Jump_Addr, ID_EX_PC_AddResult,
-        EX_ALU_Zero,
-        EX_ALU_Result, ID_EX_ReadData2,
-        Add_Result,
-        EX_RegDst_Out,
+    EX_MEM_Reg m15 (
+        .Clk(Clk),
+        .Rst(Rst),
+        .RegWrite_In(ID_EX_RegWrite),
+        .MemToReg_In(ID_EX_MemToReg),
+        .Branch_In(ID_EX_Branch),
+        .MemRead_In(ID_EX_MemRead),
+        .MemWrite_In(ID_EX_MemWrite),
+        .Jump_In(ID_EX_Jump),
+        .JumpRegister_In(ID_EX_JumpRegister),
+        .Link_In(ID_EX_Link),
+        .RegDst_In(ID_EX_RegDst),
+        .MemSize_In(ID_EX_MemSize),
+        .JumpAddr_In(ID_EX_Jump_Addr),
+        .BranchAddr_In(ID_EX_PC_AddResult),
+        .ALUZero_In(EX_ALU_Zero),
+        .ALUResult_In(EX_ALU_Result),
+        .ReadData2_In(ID_EX_ReadData2),
+        .BranchTarget_In(Add_Result),
+        .ID_EX_Rd_In(EX_RegDst_Out),
+        .ID_EX_Rt_In(ID_EX_Rt),
         
-        EX_MEM_RegWrite, EX_MEM_MemToReg,
-        EX_MEM_Branch, EX_MEM_MemRead, EX_MEM_MemWrite, EX_MEM_Jump, EX_MEM_JumpRegister, EX_MEM_Link,
-        EX_MEM_MemSize,
-        EX_MEM_Jump_Addr, EX_MEM_PC_AddResult,
-        EX_MEM_Zero,
-        EX_MEM_ALU_Result, EX_MEM_ReadData2,
-        EX_MEM_BranchTarget,
-        EX_MEM_RegDst_Out
+        .RegWrite_Out(EX_MEM_RegWrite),
+        .MemToReg_Out(EX_MEM_MemToReg),
+        .Branch_Out(EX_MEM_Branch),
+        .MemRead_Out(EX_MEM_MemRead),
+        .MemWrite_Out(EX_MEM_MemWrite),
+        .Jump_Out(EX_MEM_Jump),
+        .JumpRegister_Out(EX_MEM_JumpRegister),
+        .Link_Out(EX_MEM_Link),
+        .MemSize_Out(EX_MEM_MemSize),
+        .JumpAddr_Out(EX_MEM_Jump_Addr),
+        .BranchAddr_Out(EX_MEM_BranchAddr),
+        .ALUZero_Out(EX_MEM_ALUZero),
+        .ALUResult_Out(EX_MEM_ALU_Result),
+        .ReadData2_Out(EX_MEM_ReadData2),
+        .BranchTarget_Out(EX_MEM_BranchTarget),
+        .EX_MEM_Rd_Out(EX_MEM_Rd)
     );
 
     // PCSrc Mux
@@ -158,24 +212,37 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     // MEM/WB
     wire MEM_WB_RegWrite, MEM_WB_MemToReg, MEM_WB_Link;
     wire [31:0] MEM_WB_DM_ReadData, MEM_WB_ALU_Result, MEM_WB_PC_AddResult;
-    wire [31:0] MEM_WB_RegDst_Out;
+    
+    wire [4:0] MEM_WB_Rd;
+    assign MEM_WB_WriteRegister = MEM_WB_Rd;
+    
     wire [1:0] MEM_WB_MemSize;
     
-    MEM_WB_Reg m18(
-        Clk, Rst,
-        EX_MEM_RegWrite, EX_MEM_MemToReg, EX_MEM_Link,
-        MEM_DM_ReadData, EX_MEM_ALU_Result, EX_MEM_PC_AddResult,
-        EX_MEM_RegDst_Out,
-        EX_MEM_MemSize,
+    MEM_WB_Reg m18 (
+        .Clk(Clk),
+        .Rst(Rst),
+        .RegWrite_In(EX_MEM_RegWrite),
+        .MemToReg_In(EX_MEM_MemToReg),
+        .Link_In(EX_MEM_Link),
+        .DM_ReadData_In(MEM_DM_ReadData),
+        .ALU_Result_In(EX_MEM_ALU_Result),
+        .PC_AddResult_In(EX_MEM_BranchAddr),
+        .EX_MEM_Rd_In(EX_MEM_Rd),
+        .MemSize_In(EX_MEM_MemSize),
         
-        MEM_WB_RegWrite, MEM_WB_MemToReg, MEM_WB_Link,
-        MEM_WB_DM_ReadData, MEM_WB_ALU_Result, MEM_WB_PC_AddResult,
-        MEM_WB_RegDst_Out,
-        MEM_WB_MemSize
+        .RegWrite_Out(MEM_WB_RegWrite),
+        .MemToReg_Out(MEM_WB_MemToReg),
+        .Link_Out(MEM_WB_Link),
+        .DM_ReadData_Out(MEM_WB_DM_ReadData),
+        .MEM_WB_ALU_Result(MEM_WB_ALU_Result),
+        .PC_AddResult_Out(MEM_WB_PC_AddResult),
+        .MEM_WB_Rd(MEM_WB_Rd),
+        .MemSize_Out(MEM_WB_MemSize)
     );
 
+
     // WB Mux and WriteRegister Override for jal
-    assign MEM_WB_WriteRegister = MEM_WB_Link ? 5'd31 : MEM_WB_RegDst_Out;
+    assign MEM_WB_WriteRegister = MEM_WB_Link ? 5'd31 : MEM_WB_Rd;
     assign RegWriteData = MEM_WB_Link ? MEM_WB_PC_AddResult :
                           MEM_WB_MemToReg ? MEM_WB_DM_ReadData :
                           MEM_WB_ALU_Result;
