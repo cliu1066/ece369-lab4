@@ -21,12 +21,18 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     wire [31:0] JumpAddress;
     
     // Instruction Fetch
+    // ProgramCounter: input PC_In, output PC_Out if not Rst and at posedge Clk
     ProgramCounter m1(PC_In, PC_Out, Rst, Clk);
+    // PCAdder: PC_AddResult = PC_Oout + 4
     PCAdder m2(PC_Out, PC_AddResult);
+    // InustructionMemory: PC_Out is the index into the instruction memory array
+    // and gives the instruction (array initialized by readmemh instruction_memory.mem)
     InstructionMemory m3(PC_Out, Instruction);
     
-    // IF/ID
+    // IF/ID - Instruction Fetch and Decode
     wire [31:0] IF_ID_PC_Out, IF_ID_Instruction_Out;
+    // For all pipeline register modules, they take in the input control signals and reset
+    // all to 0 when Rst is high, else they retain the values since no forwarding
     IF_ID_Reg m5(
       .Clk(Clk),
       .Rst(Rst),
@@ -41,7 +47,10 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     wire RegWrite;
     wire [4:0] MEM_WB_WriteRegister;
     wire [31:0] ReadData1, ReadData2;
-    
+
+    // RegisterFile initialized with all 0s
+    // Write at posedge Clk when RegWrite is high and read at negedge Clk
+    // Ensures register $zero is always 0
     RegisterFile m6 (
         .ReadRegister1(IF_ID_Instruction_Out[25:21]),
         .ReadRegister2(IF_ID_Instruction_Out[20:16]),
@@ -52,28 +61,33 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
         .ReadData1(ReadData1),
         .ReadData2(ReadData2)
     );
-
     
     // Sign Extend
     wire [31:0] Imm_SE;
+    // SignExtension, concatenates 16 copies of sign bit with 16 bit input
     SignExtension m7(IF_ID_Instruction_Out[15:0], Imm_SE);
 
     // Jump Address (j, jal)
+    // Format of jump instruction: [31:26] OpCode [25:0] Target
     wire [27:0] JumpTarget;
     assign JumpTarget = {IF_ID_Instruction_Out[25:0], 2'b00}; // shift left 2
+    // Shift address left by 2 -> multiply by 4 for word alignment
     assign JumpAddress = {IF_ID_PC_Out[31:28], JumpTarget}; // full 32 bit jump address
+    // 28 bit shifted address + upper 4 PC bits = 32 bit address
 
     // Control
     wire RegDst, Jump, JumpRegister, Link, Branch, MemRead, MemToReg, MemWrite, ALUSrc;
     wire [1:0] MemSize; // 00: word, 01: halfword, 10: byte
     wire [3:0] ALUOp;
+
+    // Controller: input OpCode, Funct, Rt, outputs control signals
     Controller m8 (
         .OpCode(IF_ID_Instruction_Out[31:26]),
-        .Funct (IF_ID_Instruction_Out[5:0]),
+        .Funct (IF_ID_Instruction_Out[5:0]),    // for differentiating R-type, nop, jr
         .RegDst(RegDst),
         .Jump(Jump),
-        .JumpRegister(JumpRegister),
-        .Link(Link),
+        .JumpRegister(JumpRegister),    // jr
+        .Link(Link),                    // jal
         .Branch(Branch),
         .MemRead(MemRead),
         .MemToReg(MemToReg),
@@ -82,7 +96,7 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
         .MemSize(MemSize),
         .ALUSrc(ALUSrc),
         .RegWrite(RegWrite),
-        .Rt(IF_ID_Instruction_Out[20:16])
+        .Rt(IF_ID_Instruction_Out[20:16])    // for differentiating bgez and bltz
     );
 
     // ID/EX
@@ -119,7 +133,8 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     // RegDst Mux
     wire [4:0] EX_RegDst_Out; 
     // output to RegDst mux in EX stage of pipeline
-    //Mux32Bit2To1 m10(EX_RegDst_Out, ID_EX_Rt, ID_EX_Rd, ID_EX_RegDst);
+    // Mux32Bit2To1 m10(EX_RegDst_Out, ID_EX_Rt, ID_EX_Rd, ID_EX_RegDst);
+    // RegDst = 0: Rt, RegDst = 1: Rd
     assign EX_RegDst_Out = ID_EX_RegDst ? ID_EX_Rd : ID_EX_Rt;
 
     // Shift left 2
@@ -130,10 +145,12 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     // Branch Target Adder
     wire [31:0] Add_Result;
     wire DummyZero;
+    // Branch target address = shift left 2 output + (PC + 4)
     ALU32Bit m12(4'b0010, ID_EX_PC_AddResult, SLL_Out, Add_Result, DummyZero);
 
     // ALUSrc Mux
     wire [31:0] EX_ALUSrc_Out;
+    // Sel = 0: ReadData2, sel = 1: ImmSE as second input to ALU
     Mux32Bit2To1 m13(EX_ALUSrc_Out, ID_EX_ReadData2, ID_EX_Imm_SE, ID_EX_ALUSrc);
 
     // EX ALU
@@ -193,6 +210,10 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     );
 
     // PCSrc Mux
+    // Current Datapath: ALUZero && Branch -> mux sel signal
+    // Modified: Check BranchALUResult since branch comparisons implemented in ALU
+    // Then check if j, select JumpAddr for PC value
+    // Finally check if jr, select ReadData2 for PC
     wire [31:0] BranchTarget;
     wire BranchALUResult = EX_MEM_ALU_Result[0];
     assign BranchTarget = EX_MEM_BranchTarget;
@@ -210,6 +231,10 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     //ALU32Bit m16(4'b0000, EX_MEM_Branch, EX_MEM_ALU_Result[0], PCSrc, 1'b0);
     
     // Data Memory
+    // Data memory array initialized with $readmemh("data_memory.mem")
+    // Need 10 bit address to index into 1024 memory elements
+    // lh: sign-extends bit 15 to 32 bits, lb: selects byte based on offset and sign extends to 32 bits
+    // Writes only happen on posedge Clk and only write in number of bits requested (otehr bytes unchanged)
     wire [31:0] MEM_DM_ReadData;
     DataMemory m17(EX_MEM_ALU_Result, EX_MEM_ReadData2, Clk, EX_MEM_MemWrite, EX_MEM_MemRead, MEM_DM_ReadData, EX_MEM_MemSize);
     
@@ -246,7 +271,9 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
 
 
     // WB Mux and WriteRegister Override for jal
+    // If jal, WriteRegister = $ra (register 31)
     assign MEM_WB_WriteRegister = MEM_WB_Link ? 5'd31 : MEM_WB_Rd;
+    // If jal, RegWriteData = PC + 4, if lw/mem: RegWriteData = ReadData, else R-Type/Imm: ALU_Result
     assign RegWriteData = MEM_WB_Link ? MEM_WB_PC_AddResult :
                           MEM_WB_MemToReg ? MEM_WB_DM_ReadData :
                           MEM_WB_ALU_Result;
