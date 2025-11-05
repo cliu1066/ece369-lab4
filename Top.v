@@ -2,16 +2,21 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 // ECE369 - Computer Architecture
+//
+// Student(s) Name and Last Name: 
+//      Candice Liu (33%), Andrew Ghartey (33%), Barack Marwanga Asande (33%)
 // 
 // Module - Top.v
-// Description - Top level module for MIPS 5 stage pipeline.
+// Description - Top level datapath module for MIPS 5 stage pipeline
+//
 ////////////////////////////////////////////////////////////////////////////////
 
 module Top(Clk, Rst, PC_Out, RegWriteData);
     input Clk, Rst;
+    output wire [31:0] PC_Out;
+    output wire [31:0] RegWriteData;
     
     wire [31:0] PC_In, PC_AddResult;
-    output wire [31:0] PC_Out;
     wire [31:0] Instruction;
     wire [31:0] JumpAddress;
     
@@ -35,7 +40,6 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     // RegisterFile
     wire RegWrite;
     wire [4:0] MEM_WB_WriteRegister;
-    output wire [31:0] RegWriteData;
     wire [31:0] ReadData1, ReadData2;
     
     RegisterFile m6 (
