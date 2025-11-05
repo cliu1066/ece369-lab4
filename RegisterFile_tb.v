@@ -13,15 +13,11 @@
 
 module RegisterFile_tb();
 
-	reg [4:0] ReadRegister1;
-	reg [4:0] ReadRegister2;
-	reg	[4:0] WriteRegister;
+	reg [4:0] ReadRegister1, ReadRegister2, WriteRegister;
 	reg [31:0] WriteData;
-	reg RegWrite;
-	reg Clk;
+	reg RegWrite, Clk;
 
-	wire [31:0] ReadData1;
-	wire [31:0] ReadData2;
+	wire [31:0] ReadData1, ReadData2;
 	
 	integer i;
 

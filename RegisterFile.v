@@ -57,15 +57,23 @@ module RegisterFile(ReadRegister1, ReadRegister2, WriteRegister, WriteData, RegW
 	
 	reg [31:0] Register [0:31];
 	
+	integer i;
+    initial begin
+        for (i = 0; i < 32; i = i + 1) begin
+            Register[i] = 32'd0;
+        end
+    end
+	
 	// Write procedure
 	always @(posedge Clk) begin
-        if (RegWrite) begin
+        if (RegWrite && (WriteRegister != 0)) begin
             Register[WriteRegister] <= WriteData;
         end
+        Register[0] <= 32'd0;
 	end
 	
 	// Read procedure
-	always @(*) begin
+	always @(negedge Clk) begin
 	   ReadData1 <= Register[ReadRegister1];
 	   ReadData2 <= Register[ReadRegister2];
 	end
