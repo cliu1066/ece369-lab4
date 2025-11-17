@@ -131,7 +131,7 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
         ID_EX_ReadData1, ID_EX_ReadData2, ID_EX_Imm_SE,
         ID_EX_Rs, ID_EX_Rt, ID_EX_Rd,
         ID_EX_Funct, ID_EX_OpCode,
-        ID_EX_Shamt // *** ADDED ***
+        ID_EX_Shamt; // *** ADDED ***
     );
 
     
