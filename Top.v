@@ -109,6 +109,8 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     wire [31:0] ID_EX_Imm_SE;
     wire [4:0] ID_EX_Rs, ID_EX_Rt, ID_EX_Rd;
     wire [5:0] ID_EX_Funct, ID_EX_OpCode;
+    wire [4:0] ID_EX_Shamt // Added**
+    
     ID_EX_Reg m9(Clk, Rst,
         RegWrite, MemToReg,
         Branch, MemRead, MemWrite, Jump, JumpRegister, Link,
@@ -119,6 +121,7 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
         ReadData1, ReadData2, Imm_SE,
         IF_ID_Instruction_Out[25:21], IF_ID_Instruction_Out[20:16], IF_ID_Instruction_Out[15:11],
         IF_ID_Instruction_Out[5:0], IF_ID_Instruction_Out[31:26],
+        IF_ID_Instruction_Out[10:6], // Shamt_In // *** ADDED ***
                      
         ID_EX_RegWrite, ID_EX_MemToReg,
         ID_EX_Branch, ID_EX_MemRead, ID_EX_MemWrite, ID_EX_Jump, ID_EX_JumpRegister, ID_EX_Link,
@@ -127,8 +130,10 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
         ID_EX_Jump_Addr, ID_EX_PC_AddResult,
         ID_EX_ReadData1, ID_EX_ReadData2, ID_EX_Imm_SE,
         ID_EX_Rs, ID_EX_Rt, ID_EX_Rd,
-        ID_EX_Funct, ID_EX_OpCode
+        ID_EX_Funct, ID_EX_OpCode,
+        ID_EX_Shamt // *** ADDED ***
     );
+
     
     // RegDst Mux
     wire [4:0] EX_RegDst_Out; 
@@ -150,13 +155,20 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
 
     // ALUSrc Mux
     wire [31:0] EX_ALUSrc_Out;
+    wire [31:0] EX_ALU_A; // *** ADDED ***
     // Sel = 0: ReadData2, sel = 1: ImmSE as second input to ALU
     Mux32Bit2To1 m13(EX_ALUSrc_Out, ID_EX_ReadData2, ID_EX_Imm_SE, ID_EX_ALUSrc);
 
     // EX ALU
     wire EX_ALU_Zero;
     wire [31:0] EX_ALU_Result;
-    ALU32Bit m14(ID_EX_ALUOp, ID_EX_ReadData1, EX_ALUSrc_Out, EX_ALU_Result, EX_ALU_Zero);
+
+    // For SLL/SRL, use shamt as the A input (in bits [4:0]) otherwise use ReadData1
+    assign EX_ALU_A = (ID_EX_ALUOp == 4'b0111 || ID_EX_ALUOp == 4'b1000) ?  // SLL or SRL // *** ADDED ***
+                      {27'd0, ID_EX_Shamt} :                               // *** ADDED ***
+                      ID_EX_ReadData1;                                     // *** ADDED ***
+
+    ALU32Bit m14(ID_EX_ALUOp, EX_ALU_A, EX_ALUSrc_Out, EX_ALU_Result, EX_ALU_Zero); // *** CHANGED ***
 
     // EX/MEM
     wire [31:0] EX_MEM_BranchAddr;

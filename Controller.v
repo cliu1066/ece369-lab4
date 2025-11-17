@@ -30,7 +30,6 @@ module Controller(OpCode, Funct, RegDst, Jump, JumpRegister, Link, Branch, MemRe
         Link = 1'b0;
         ALUOp = 4'b0010;
         MemSize = 2'b00;
-        
         case (OpCode)
             // R - type
             6'b000000: begin
@@ -70,25 +69,6 @@ module Controller(OpCode, Funct, RegDst, Jump, JumpRegister, Link, Branch, MemRe
                             6'b000010: ALUOp = 4'b1000; // srl
                             6'b101010: ALUOp = 4'b0100; // slt
                         endcase
-                    end
-                endcase
-            end
-            
-            6'b011100 : begin
-                case (Funct)
-                    6'b000010: begin
-                        RegDst = 1'b1;
-                        ALUSrc = 1'b0;
-                        MemToReg = 1'b0;
-                        RegWrite = 1'b1;
-                        MemRead = 1'b0;
-                        MemWrite = 1'b0;
-                        Branch = 1'b0;
-                        Jump = 1'b0;
-                        JumpRegister = 1'b0;
-                        Link = 1'b0;
-                        ALUOp = 4'b1001;
-                        MemSize = 2'b00;
                     end
                 endcase
             end
