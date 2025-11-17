@@ -34,6 +34,7 @@ module ALU32Bit(ALUControl, A, B, ALUResult, Zero);
 
 	output reg [31:0] ALUResult;	// answer - added reg here
 	output Zero;	    // Zero=1 if ALUResult == 0
+	reg [64:0] temp;
 
     /* Please fill in the implementation here... */
     always @(*) begin
@@ -48,7 +49,10 @@ module ALU32Bit(ALUControl, A, B, ALUResult, Zero);
             4'b0110: ALUResult = A ^ B;                    // XOR
             4'b0111: ALUResult = B << A[4:0];              // SLL (shift left logical)
             4'b1000: ALUResult = B >> A[4:0];              // SRL (shift right logical)
-            4'b1001: ALUResult = A * B;                    // MUL
+            4'b1001: begin
+                temp = A * B;                              // MUL
+                ALUResult = temp[31:0];
+            end
             4'b1010: ALUResult = ($signed(A) >= 0) ? 32'd1 : 32'd0; // BGEZ
             4'b1011: ALUResult = ($signed(A) == $signed(B)) ? 32'd1 : 32'd0; // BEQ
             4'b1100: ALUResult = ($signed(A) != $signed(B)) ? 32'd1 : 32'd0; // BNE
