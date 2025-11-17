@@ -34,6 +34,7 @@ module ALU32Bit(ALUControl, A, B, ALUResult, Zero);
 
 	output reg [31:0] ALUResult;	// answer - added reg here
 	output Zero;	    // Zero=1 if ALUResult == 0
+	reg [64:0] temp;
 
     /* Please fill in the implementation here... */
     always @(*) begin
@@ -48,10 +49,10 @@ module ALU32Bit(ALUControl, A, B, ALUResult, Zero);
             4'b0110: ALUResult = A ^ B;                    // XOR
             4'b0111: ALUResult = B << A[4:0];              // SLL (shift left logical)
             4'b1000: ALUResult = B >> A[4:0];              // SRL (shift right logical)
-            // This part is right already. The bug is probably how 'A' is wired in the EX stage. Fix top and ID_EX
-            // No change to IF_ID_Reg cause the [10:6] shamt is preserved in IF_ID_Instruction_out
-
-            4'b1001: ALUResult = (A * B)[31:0];  // MUL, keep low 32 bits (change for issue 1)
+            4'b1001: begin
+                temp = A * B;                              // MUL
+                ALUResult = temp[31:0];
+            end
             4'b1010: ALUResult = ($signed(A) >= 0) ? 32'd1 : 32'd0; // BGEZ
             4'b1011: ALUResult = ($signed(A) == $signed(B)) ? 32'd1 : 32'd0; // BEQ
             4'b1100: ALUResult = ($signed(A) != $signed(B)) ? 32'd1 : 32'd0; // BNE
