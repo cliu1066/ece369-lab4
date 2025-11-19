@@ -58,7 +58,8 @@ module EX_MEM_Reg(
             JumpAddr_Out <= JumpAddr_In;
             BranchAddr_Out <= BranchAddr_In;
             ALUZero_Out <= ALUZero_In;
-            ALUResult_Out <= ALUResult_In;
+            if (RegWrite_In) ALUResult_Out <= ALUResult_In;
+            else ALUResult_Out <= 32'b0;
             ReadData2_Out <= ReadData2_In;
             BranchTarget_Out <= BranchTarget_In;
             EX_MEM_Rd_Out <= EX_WriteReg;  // select Rd or Rt correctly
