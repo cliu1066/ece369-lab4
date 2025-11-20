@@ -54,8 +54,8 @@ module ALU32Bit(ALUControl, A, B, ALUResult, Zero);
                 ALUResult = temp[31:0];
             end
             4'b1010: ALUResult = ($signed(A) >= 0) ? 32'd1 : 32'd0; // BGEZ
-            4'b1011: ALUResult = ($signed(A) == $signed(B)) ? 32'd1 : 32'd0; // BEQ
-            4'b1100: ALUResult = ($signed(A) != $signed(B)) ? 32'd1 : 32'd0; // BNE
+            4'b1011: ALUResult = A - B; // BEQ
+            4'b1100: ALUResult = A - B; // BNE
             4'b1101: ALUResult = ($signed(A) > 0) ? 32'd1 : 32'd0;  // BGTZ
             4'b1110: ALUResult = ($signed(A) <= 0) ? 32'd1 : 32'd0; // BLEZ
             4'b1111: ALUResult = ($signed(A) < 0) ? 32'd1 : 32'd0;  // BLTZ
