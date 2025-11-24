@@ -2,7 +2,9 @@
 module EX_MEM_Reg(
     input Clk, Rst,
     input RegWrite_In, MemToReg_In,
-    input Branch_In, MemRead_In, MemWrite_In, Jump_In,
+    input [5:0] OpCode_In, 
+    input Branch_In,
+    input MemRead_In, MemWrite_In, Jump_In,
     input JumpRegister_In, Link_In,
     input RegDst_In,
     input [1:0] MemSize_In,
@@ -13,7 +15,9 @@ module EX_MEM_Reg(
     input [4:0] WriteReg_In,
      
     output reg RegWrite_Out, MemToReg_Out,
-    output reg Branch_Out, MemRead_Out, MemWrite_Out, Jump_Out,
+    output reg [5:0] OpCode_Out, 
+    output reg Branch_Out,
+    output reg MemRead_Out, MemWrite_Out, Jump_Out,
     output reg JumpRegister_Out, Link_Out,
     output reg [1:0] MemSize_Out,
     output reg [31:0] JumpAddr_Out, BranchAddr_Out,
@@ -27,6 +31,7 @@ module EX_MEM_Reg(
         if (Rst) begin
             RegWrite_Out <= 1'b0;
             MemToReg_Out <= 1'b0;
+            OpCode_Out <= 6'b0;
             Branch_Out <= 1'b0;
             MemRead_Out <= 1'b0;
             MemWrite_Out <= 1'b0;
@@ -45,6 +50,7 @@ module EX_MEM_Reg(
         else begin
             RegWrite_Out <= RegWrite_In;
             MemToReg_Out <= MemToReg_In;
+            OpCode_Out <= OpCode_In;
             Branch_Out <= Branch_In;
             MemRead_Out <= MemRead_In;
             MemWrite_Out <= MemWrite_In;

@@ -57,12 +57,17 @@ module ID_EX_Reg(
         end
         else if (ID_EX_Flush) begin
             RegWrite_Out <= 0;
+            MemToReg_Out <= 0;
+            Branch_Out   <= 0;
             MemRead_Out  <= 0;
             MemWrite_Out <= 0;
-            Branch_Out   <= 0;
             Jump_Out     <= 0;
             JumpRegister_Out <= 0;
-            Link_Out     <= 0;
+            Link_Out <= 0;
+            RegDst_Out <= 0;
+            ALUSrc_Out <= 0;
+            ALUOp_Out  <= 4'b0000;
+            MemSize_Out <= 2'b00;
         end
         else begin
             RegWrite_Out <= RegWrite_In;

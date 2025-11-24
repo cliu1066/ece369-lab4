@@ -47,7 +47,7 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     // all to 0 when Rst is high, else they retain the values since no forwarding
     
     wire ID_EX_Jump, ID_EX_JumpRegister, BranchTaken_EX;
-    wire Flush_EX = BranchTaken_EX || Jump || JumpRegister;
+    wire Flush_EX = ID_EX_Jump || ID_EX_JumpRegister || BranchTaken_EX;
     
     wire IF_ID_Flush_Final = Flush_EX | IF_ID_Flush;
 
@@ -201,6 +201,18 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
         (ForwardStore == 2'b10) ? EX_MEM_ALU_Result:
                                   RegWriteData;
                                   
+    wire [31:0] BranchA_EX, BranchB_EX;
+
+    assign BranchA_EX =
+        (ForwardBranchA == 2'b00) ? ID_EX_ReadData1      :
+        (ForwardBranchA == 2'b10) ? EX_MEM_ALU_Result    :
+                                    RegWriteData;         // from WB
+    
+    assign BranchB_EX =
+        (ForwardBranchB == 2'b00) ? ID_EX_ReadData2      :
+        (ForwardBranchB == 2'b10) ? EX_MEM_ALU_Result    :
+                                    RegWriteData;
+                                  
     Mux32Bit2To1 m13(EX_ALUSrc_Out, ForwardedB_EX, ID_EX_Imm_SE, ID_EX_ALUSrc);
     
     // For SLL/SRL, use shamt as the A input (in bits [4:0]) otherwise use ReadData1
@@ -227,6 +239,7 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
         .Rst(Rst),
         .RegWrite_In(ID_EX_RegWrite),
         .MemToReg_In(ID_EX_MemToReg),
+        .OpCode_In(ID_EX_OpCode),
         .Branch_In(ID_EX_Branch),
         .MemRead_In(ID_EX_MemRead),
         .MemWrite_In(ID_EX_MemWrite),
@@ -245,6 +258,7 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
         
         .RegWrite_Out(EX_MEM_RegWrite),
         .MemToReg_Out(EX_MEM_MemToReg),
+        .OpCode_Out(EX_MEM_OpCode),
         .Branch_Out(EX_MEM_Branch),
         .MemRead_Out(EX_MEM_MemRead),
         .MemWrite_Out(EX_MEM_MemWrite),
@@ -267,14 +281,16 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     // Then check if j, select JumpAddr for PC value
     // Finally check if jr, select ReadData2 for PC
     wire [31:0] BranchTarget;
-    wire BEQ_taken = (ID_EX_OpCode == 6'b000100) && EX_ALU_Zero;
-    wire BNE_taken = (ID_EX_OpCode == 6'b000101) && !EX_ALU_Zero;
-    wire OTHER_taken = ((ID_EX_OpCode == 6'b000001) ||
-                        (ID_EX_OpCode == 6'b000110) ||
-                        (ID_EX_OpCode == 6'b000111)) &&
-                        (EX_ALU_Result == 32'd1);
+    wire BEQ_taken = (ID_EX_OpCode == 6'b000100) && (BranchA_EX == BranchB_EX);
+wire BNE_taken = (ID_EX_OpCode == 6'b000101) && (BranchA_EX != BranchB_EX);
+    wire OTHER_taken =
+       ((ID_EX_OpCode == 6'b000001) ||   // BGEZ, BLTZ variants
+        (ID_EX_OpCode == 6'b000110) ||
+        (ID_EX_OpCode == 6'b000111))
+        && (EX_ALU_Result == 32'd1);
     
     assign BranchTaken_EX = BEQ_taken || BNE_taken || OTHER_taken;
+    
     
     assign BranchTarget = EX_MEM_BranchTarget;
     
@@ -378,6 +394,7 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
         .ID_EX_Flush(ID_EX_Flush),
         .IF_ID_Flush(IF_ID_Flush)
     );
+    
 
 
     // WB Mux and WriteRegister Override for jal
