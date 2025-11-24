@@ -1,20 +1,20 @@
 module ForwardingUnit (
     // EX stage register sources
-    input  [4:0] EX_rs,
-    input  [4:0] EX_rt,
+    input [4:0] EX_rs,
+    input [4:0] EX_rt,
 
     // Destination registers from later pipeline stages
-    input  [4:0] MEM_WriteReg,
-    input  [4:0] WB_WriteReg,
-    input        MEM_RegWrite,
-    input        WB_RegWrite,
+    input [4:0] MEM_WriteReg,
+    input [4:0] WB_WriteReg,
+    input MEM_RegWrite,
+    input WB_RegWrite,
 
     // For store data forwarding
-    input        EX_isStore,
+    input EX_isStore,
 
     // For branch forwarding (from ID stage)
-    input  [4:0] ID_rs,
-    input  [4:0] ID_rt,
+    input [4:0] ID_rs,
+    input [4:0] ID_rt,
 
     // ALU forwarding outputs
     output reg [1:0] ForwardA,
@@ -28,9 +28,7 @@ module ForwardingUnit (
     output reg [1:0] ForwardStore
 );
 
-    // ---------------------------
-    // ALU FORWARDING (EX stage)
-    // ---------------------------
+    //ALU forwarding EX stage
     always @(*) begin
     // default: no forwarding
     ForwardA = 2'b00;
@@ -51,9 +49,7 @@ module ForwardingUnit (
 
    
 
-    // ---------------------------
-    // STORE FORWARDING (EX stage)
-    // ---------------------------
+    //Store forwarding in EX
     always @(*) begin
         ForwardStore = 2'b00;  // default: use register file value
 
@@ -67,9 +63,7 @@ module ForwardingUnit (
         end
     end
 
-    // ---------------------------
-    // BRANCH FORWARDING (ID stage)
-    // ---------------------------
+    //branch forwarding
     always @(*) begin
         ForwardBranchA = 2'b00;
         ForwardBranchB = 2'b00;
