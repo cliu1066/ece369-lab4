@@ -13,7 +13,8 @@ module ID_EX_Reg(
     input [31:0] ReadData1, ReadData2, ImmSE_In,
     input [4:0] IF_ID_Rs_In, IF_ID_Rt_In, IF_ID_Rd_In,
     input [5:0] IF_ID_Funct_In, IF_ID_OpCode_In,
-    input [4:0] Shamt_In, // *** ADDED ***
+    input [4:0] Shamt_In,
+    input ID_EX_Flush,
     
     output reg RegWrite_Out, MemToReg_Out,
     output reg Branch_Out, MemRead_Out, MemWrite_Out, Jump_Out,
@@ -25,7 +26,7 @@ module ID_EX_Reg(
     output reg [31:0] ReadData1_Out, ReadData2_Out, ImmSE_Out,
     output reg [4:0] IF_ID_Rs_Out, IF_ID_Rt_Out, IF_ID_Rd_Out,
     output reg [5:0] IF_ID_Funct_Out, IF_ID_OpCode_Out,
-    output reg [4:0] Shamt_Out // *** ADDED ***
+    output reg [4:0] Shamt_Out
     );
     
     always@(posedge Clk) begin
@@ -52,7 +53,16 @@ module ID_EX_Reg(
             IF_ID_Rd_Out <= 5'b0;
             IF_ID_Funct_Out <= 6'b0;
             IF_ID_OpCode_Out <= 6'b0;
-            Shamt_Out <= 5'b0; // *** ADDED ***
+            Shamt_Out <= 5'b0;
+        end
+        else if (ID_EX_Flush) begin
+            RegWrite_Out <= 0;
+            MemRead_Out  <= 0;
+            MemWrite_Out <= 0;
+            Branch_Out   <= 0;
+            Jump_Out     <= 0;
+            JumpRegister_Out <= 0;
+            Link_Out     <= 0;
         end
         else begin
             RegWrite_Out <= RegWrite_In;
@@ -77,7 +87,7 @@ module ID_EX_Reg(
             IF_ID_Rd_Out <= IF_ID_Rd_In;
             IF_ID_Funct_Out <= IF_ID_Funct_In;
             IF_ID_OpCode_Out <= IF_ID_OpCode_In;
-            Shamt_Out <= Shamt_In; // *** ADDED ***
+            Shamt_Out <= Shamt_In;
         end
     end
 
