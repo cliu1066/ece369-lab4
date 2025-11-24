@@ -47,7 +47,7 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     // all to 0 when Rst is high, else they retain the values since no forwarding
     
     wire ID_EX_Jump, ID_EX_JumpRegister, BranchTaken_EX;
-    wire Flush_EX = ID_EX_Jump || ID_EX_JumpRegister || BranchTaken_EX;
+    wire Flush_EX = BranchTaken_EX || Jump || JumpRegister;
     
     wire IF_ID_Flush_Final = Flush_EX | IF_ID_Flush;
 
@@ -387,6 +387,5 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     assign RegWriteData = MEM_WB_Link ? MEM_WB_PC_AddResult :
                           MEM_WB_MemToReg ? MEM_WB_DM_ReadData :
                           MEM_WB_ALU_Result;
-   
-    
+
 endmodule
