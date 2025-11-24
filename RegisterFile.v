@@ -70,17 +70,16 @@ module RegisterFile(ReadRegister1, ReadRegister2, WriteRegister, WriteData, RegW
         if (RegWrite && (WriteRegister != 0)) begin
             Register[WriteRegister] <= WriteData;
         end
-        Register[0] <= 32'd0;
 	end
 	
-	always @(negedge Clk) begin
-	   ReadData1_Reg <= Register[ReadRegister1];
-	   ReadData2_Reg <= Register[ReadRegister2];
-	end
-	
-	// Read procedure
-   assign ReadData1 = ReadData1_Reg;
-   assign ReadData2 = ReadData2_Reg;
+	assign ReadData1 = (ReadRegister1 == 5'd0) ? 32'd0 :
+                       (RegWrite && WriteRegister == ReadRegister1) ? WriteData :
+                       Register[ReadRegister1];
+                       
+    assign ReadData2 = (ReadRegister2 == 5'd0) ? 32'd0 :
+                       (RegWrite && WriteRegister == ReadRegister2) ? WriteData :
+                       Register[ReadRegister2];
+
 
 
 endmodule

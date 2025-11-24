@@ -68,7 +68,7 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     wire [4:0] MEM_WB_WriteRegister;
     wire [31:0] ReadData1, ReadData2;
     wire MEM_WB_RegWrite, MEM_WB_MemToReg, MEM_WB_Link;
-
+    
     // RegisterFile initialized with all 0s
     // Write at posedge Clk when RegWrite is high and read at negedge Clk
     // Ensures register $zero is always 0
@@ -241,8 +241,7 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
         .ALUResult_In(EX_ALU_Result),
         .ReadData2_In(StoreData_EX),
         .BranchTarget_In(Add_Result),
-        .ID_EX_Rd_In(ID_EX_Rd),
-        .ID_EX_Rt_In(ID_EX_Rt),
+        .WriteReg_In(EX_Rd),
         
         .RegWrite_Out(EX_MEM_RegWrite),
         .MemToReg_Out(EX_MEM_MemToReg),

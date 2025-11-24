@@ -10,8 +10,7 @@ module EX_MEM_Reg(
     input ALUZero_In,
     input [31:0] ALUResult_In, ReadData2_In,
     input [31:0] BranchTarget_In,
-    input [4:0] ID_EX_Rd_In,
-    input [4:0] ID_EX_Rt_In,
+    input [4:0] WriteReg_In,
      
     output reg RegWrite_Out, MemToReg_Out,
     output reg Branch_Out, MemRead_Out, MemWrite_Out, Jump_Out,
@@ -59,7 +58,7 @@ module EX_MEM_Reg(
             ALUResult_Out <= ALUResult_In;
             ReadData2_Out <= ReadData2_In;
             BranchTarget_Out <= BranchTarget_In;
-            EX_MEM_Rd_Out <= RegDst_In ? ID_EX_Rd_In : ID_EX_Rt_In;
+            EX_MEM_Rd_Out <= WriteReg_In;
         end
     end
 endmodule
