@@ -32,22 +32,24 @@ module ForwardingUnit (
     // ALU FORWARDING (EX stage)
     // ---------------------------
     always @(*) begin
-        // default: no forwarding
-        ForwardA = 2'b00;
-        ForwardB = 2'b00;
+    // default: no forwarding
+    ForwardA = 2'b00;
+    ForwardB = 2'b00;
 
-        // EX hazard
-        if (MEM_RegWrite && MEM_WriteReg != 0 && MEM_WriteReg == EX_rs)
-            ForwardA = 2'b10;
-        if (MEM_RegWrite && MEM_WriteReg != 0 && MEM_WriteReg == EX_rt)
-            ForwardB = 2'b10;
+    // For EX_rs
+    if (MEM_RegWrite && MEM_WriteReg != 0 && MEM_WriteReg == EX_rs)
+        ForwardA = 2'b10;              // from MEM
+    else if (WB_RegWrite && WB_WriteReg != 0 && WB_WriteReg == EX_rs)
+        ForwardA = 2'b01;              // from WB
 
-        // MEM hazard
-        if (WB_RegWrite && WB_WriteReg != 0 && WB_WriteReg == EX_rs)
-            ForwardA = 2'b01;
-        if (WB_RegWrite && WB_WriteReg != 0 && WB_WriteReg == EX_rt)
-            ForwardB = 2'b01;
+    // For EX_rt
+    if (MEM_RegWrite && MEM_WriteReg != 0 && MEM_WriteReg == EX_rt)
+        ForwardB = 2'b10;
+    else if (WB_RegWrite && WB_WriteReg != 0 && WB_WriteReg == EX_rt)
+        ForwardB = 2'b01;
     end
+
+   
 
     // ---------------------------
     // STORE FORWARDING (EX stage)
