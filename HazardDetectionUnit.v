@@ -95,7 +95,7 @@ module HazardDetectionUnit (
             PC_Write    = 0;   // stop PC from advancing
             IF_ID_Write = 0;   // freeze IF/ID (so IF instruction remains there)
             ID_EX_Flush = 1;   // insert bubble into EX by turning off control signals in ID/EX
-            // Do NOT assert IF_ID_Flush for a stall — we want to keep IF/ID instruction for next cycle
+            // Do NOT assert IF_ID_Flush for a stall - we want to keep IF/ID instruction for next cycle
         end
 
         if (BranchTaken_EX) begin
