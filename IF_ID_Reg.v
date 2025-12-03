@@ -7,8 +7,11 @@ module IF_ID_Reg(Clk, Rst, IF_ID_Write, IF_ID_Flush, Instruction_In, PC_In, Inst
     output reg [31:0] Instruction_Out, PC_Out;
     
     always @(posedge Clk) begin
-        if (Rst || IF_ID_Flush) begin
+        if (Rst) begin
             PC_Out <= 32'd0;
+            Instruction_Out <= 32'd0;
+        end
+        else if (IF_ID_Flush) begin
             Instruction_Out <= 32'd0;
         end
         else if (IF_ID_Write) begin

@@ -21,7 +21,7 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     wire [31:0] JumpAddress;
     
     wire PC_Write, IF_ID_Write;
-    wire ID_EX_Flush, IF_ID_Flush;
+    wire IF_ID_Flush;
     
     wire [1:0] ForwardA, ForwardB, ForwardStore;
     wire [1:0] ForwardBranchA, ForwardBranchB;
@@ -29,7 +29,6 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     wire ID_UsesRtAsSrc, Jump_ID, ForwardingEnabled;
     assign ForwardingEnabled = 1'b1;
     
-    wire [4:0] EX_Rd;
     wire [4:0] MEM_WriteReg;
     
     // Instruction Fetch
@@ -46,22 +45,22 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     // For all pipeline register modules, they take in the input control signals and reset
     // all to 0 when Rst is high, else they retain the values since no forwarding
     
-    wire ID_EX_Jump, ID_EX_JumpRegister, BranchTaken_EX;
-    wire Flush_EX = ID_EX_Jump || ID_EX_JumpRegister || BranchTaken_EX;
+    wire IF_ID_Flush, IF_ID_FlushHazard, ID_EX_Flush, ID_EX_FlushControl;
+    wire ID_EX_Jump, ID_EX_JumpRegister;
     
-    wire IF_ID_Flush_Final = Flush_EX | IF_ID_Flush;
+    wire BranchTaken_EX = 1'b0;
+    wire IF_ID_WriteFinal;
 
     IF_ID_Reg m5(
       .Clk(Clk),
       .Rst(Rst),
-      .IF_ID_Write(IF_ID_Write),
-      .IF_ID_Flush(IF_ID_Flush_Final),
+      .IF_ID_Write(IF_ID_WriteFinal),
+      .IF_ID_Flush(IF_ID_Flush),
       .Instruction_In(Instruction),
       .PC_In(PC_AddResult),
       .Instruction_Out(IF_ID_Instruction_Out),
       .PC_Out(IF_ID_PC_Out)                    
     );
-
     
     // RegisterFile
     wire RegWrite;
@@ -100,6 +99,7 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     wire RegDst, Jump, JumpRegister, Link, Branch, MemRead, MemToReg, MemWrite, ALUSrc;
     wire [1:0] MemSize; // 00: word, 01: halfword, 10: byte
     wire [3:0] ALUOp;
+    wire [6:0] IF_ID_OpCode = IF_ID_Instruction_Out[31:26];
 
     // Controller: input OpCode, Funct, Rt, outputs control signals
     Controller m8 (
@@ -119,6 +119,8 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
         .RegWrite(RegWrite),
         .Rt(IF_ID_Instruction_Out[20:16])    // for differentiating bgez and bltz
     );
+    
+    wire [4:0] IF_ID_Rt = IF_ID_Instruction_Out[20:16];
     
     assign ID_UsesRtAsSrc = Branch || MemWrite || (IF_ID_Instruction_Out[31:26] == 6'b000000);
     assign Jump_ID = Jump | JumpRegister;
@@ -146,7 +148,7 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
         IF_ID_Instruction_Out[25:21], IF_ID_Instruction_Out[20:16], IF_ID_Instruction_Out[15:11],
         IF_ID_Instruction_Out[5:0], IF_ID_Instruction_Out[31:26],
         IF_ID_Instruction_Out[10:6], 
-        ID_EX_Flush,
+        ID_EX_FlushControl,
                      
         ID_EX_RegWrite, ID_EX_MemToReg,
         ID_EX_Branch, ID_EX_MemRead, ID_EX_MemWrite, ID_EX_Jump, ID_EX_JumpRegister, ID_EX_Link,
@@ -164,15 +166,15 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     assign MEM_WriteReg = EX_MEM_Link ? 5'd31 : EX_MEM_Rd;
 
     // Shift left 2
-    wire [31:0] SLL_Out;
+    //wire [31:0] SLL_Out;
     //ALU32Bit m11(4'b0111, 32'd2, ID_EX_Imm_SE , SLL_Out, 1'b0);
-    assign SLL_Out = ID_EX_Imm_SE << 2;
+    //assign SLL_Out = ID_EX_Imm_SE << 2;
 
     // Branch Target Adder
-    wire [31:0] Add_Result;
-    wire DummyZero;
+    //wire [31:0] BranchTarget;
+    //wire DummyZero;
     // Branch target address = shift left 2 output + (PC + 4)
-    ALU32Bit m12(4'b0010, ID_EX_PC_AddResult, SLL_Out, Add_Result, DummyZero);
+    //ALU32Bit m12(4'b0010, ID_EX_PC_AddResult, SLL_Out, BranchTarget, DummyZero);
 
     // ALUSrc Mux
     wire [31:0] EX_ALUSrc_Out;
@@ -201,18 +203,40 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
         (ForwardStore == 2'b10) ? EX_MEM_ALU_Result:
                                   RegWriteData;
                                   
-    wire [31:0] BranchA_EX, BranchB_EX;
+    wire [31:0] BranchA_ID, BranchB_ID;
 
-    assign BranchA_EX =
-        (ForwardBranchA == 2'b00) ? ID_EX_ReadData1      :
-        (ForwardBranchA == 2'b10) ? EX_MEM_ALU_Result    :
-                                    RegWriteData;         // from WB
-    
-    assign BranchB_EX =
-        (ForwardBranchB == 2'b00) ? ID_EX_ReadData2      :
-        (ForwardBranchB == 2'b10) ? EX_MEM_ALU_Result    :
+    // Branch forwarding from EX/MEM or MEM/WB
+    assign BranchA_ID =
+        (ForwardBranchA == 2'b00) ? ReadData1 :
+        (ForwardBranchA == 2'b10) ? EX_MEM_ALU_Result :
                                     RegWriteData;
+    
+    assign BranchB_ID =
+        (ForwardBranchB == 2'b00) ? ReadData2 :
+        (ForwardBranchB == 2'b10) ? EX_MEM_ALU_Result :
+                                    RegWriteData;
+    
+    // Branch target calculation in ID stage
+    wire [31:0] ID_BranchOffset_Shifted = Imm_SE << 2;
+    wire [31:0] ID_BranchTarget = IF_ID_PC_Out + ID_BranchOffset_Shifted;
                                   
+    wire BEQ = (IF_ID_OpCode == 6'b000100) && (BranchA_ID == BranchB_ID);
+    wire BNE = (IF_ID_OpCode == 6'b000101) && (BranchA_ID != BranchB_ID);
+    wire BGTZ = (IF_ID_OpCode == 6'b000111) && ($signed(BranchA_ID) > $signed(32'b0));
+    wire BLEZ = (IF_ID_OpCode == 6'b000110) && ($signed(BranchA_ID) <= $signed(32'b0));
+    wire BGEZ = (IF_ID_OpCode == 6'b000001) && (IF_ID_Rt == 5'b00001) && ($signed(BranchA_ID) >= $signed(32'b0));
+    wire BLTZ = (IF_ID_OpCode == 6'b000001) && (IF_ID_Rt == 5'b00000) && ($signed(BranchA_ID) < $signed(32'b0));
+    
+    wire BranchTaken_ID = BEQ || BNE || BGTZ || BLEZ || BGEZ || BLTZ;
+    
+    wire ControlFlowChange_ID;
+    assign ControlFlowChange_ID = ((Branch && BranchTaken_ID) || Jump || JumpRegister) && PC_Write;
+    
+    assign IF_ID_Flush = IF_ID_FlushHazard || ControlFlowChange_ID;
+    assign IF_ID_WriteFinal = IF_ID_Write && !IF_ID_Flush;
+    
+    assign ID_EX_FlushControl = ID_EX_Flush || ControlFlowChange_ID;
+    
     Mux32Bit2To1 m13(EX_ALUSrc_Out, ForwardedB_EX, ID_EX_Imm_SE, ID_EX_ALUSrc);
     
     // For SLL/SRL, use shamt as the A input (in bits [4:0]) otherwise use ReadData1
@@ -233,6 +257,9 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     wire [31:0] EX_MEM_ReadData2;
     wire [31:0] EX_MEM_BranchTarget;
     wire [4:0] EX_MEM_Rd;
+    
+    wire [4:0] EX_Rd;
+    assign EX_Rd = ID_EX_RegDst ? ID_EX_Rd : ID_EX_Rt;
 
     EX_MEM_Reg m15 (
         .Clk(Clk),
@@ -253,7 +280,7 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
         .ALUZero_In(EX_ALU_Zero),
         .ALUResult_In(EX_ALU_Result),
         .ReadData2_In(StoreData_EX),
-        .BranchTarget_In(Add_Result),
+        .BranchTarget_In(32'b0),
         .WriteReg_In(EX_Rd),
         
         .RegWrite_Out(EX_MEM_RegWrite),
@@ -280,26 +307,17 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     // Modified: Check BranchALUResult since branch comparisons implemented in ALU
     // Then check if j, select JumpAddr for PC value
     // Finally check if jr, select ReadData2 for PC
-    wire [31:0] BranchTarget;
-    wire BEQ_taken = (ID_EX_OpCode == 6'b000100) && (BranchA_EX == BranchB_EX);
-wire BNE_taken = (ID_EX_OpCode == 6'b000101) && (BranchA_EX != BranchB_EX);
-    wire OTHER_taken =
-       ((ID_EX_OpCode == 6'b000001) ||   // BGEZ, BLTZ variants
-        (ID_EX_OpCode == 6'b000110) ||
-        (ID_EX_OpCode == 6'b000111))
-        && (EX_ALU_Result == 32'd1);
     
-    assign BranchTaken_EX = BEQ_taken || BNE_taken || OTHER_taken;
-    
-    
-    assign BranchTarget = EX_MEM_BranchTarget;
+    wire ControlFlowChange;
+    assign ControlFlowChange = (Branch && BranchTaken_ID) || Jump || JumpRegister;
     
     wire [31:0] PC_Next;
-    assign PC_Next = ID_EX_JumpRegister ? EX_ALU_Result :     // jr
-               ID_EX_Jump ? ID_EX_Jump_Addr :   // j, jal
-               (ID_EX_Branch && BranchTaken_EX) ? Add_Result : // branch target
-               PC_AddResult;
-    assign PC_In = PC_Write ? PC_Next : PC_Out;
+    assign PC_Next = JumpRegister ? ReadData1 :     // jr uses register value
+           Jump ? JumpAddress :                  // j, jal
+           (Branch && BranchTaken_ID) ? ID_BranchTarget : // branch target from ID
+           PC_AddResult;
+           
+    assign PC_In = (PC_Write || ControlFlowChange) ? PC_Next : PC_Out;
 
     /*wire [1:0] PCSrc;
     assign PCSrc = EX_MEM_JumpRegister ? 2'b10 :
@@ -346,23 +364,23 @@ wire BNE_taken = (ID_EX_OpCode == 6'b000101) && (BranchA_EX != BranchB_EX);
     );
     
     ForwardingUnit m19(
-        .EX_rs(ID_EX_Rs),
-        .EX_rt(ID_EX_Rt),
+        .EX_Rs(ID_EX_Rs),
+        .EX_Rt(ID_EX_Rt),
         .MEM_WriteReg(MEM_WriteReg),
         .WB_WriteReg(MEM_WB_WriteRegister),
         .MEM_RegWrite(EX_MEM_RegWrite),
         .WB_RegWrite(MEM_WB_RegWrite),
         .EX_isStore(ID_EX_MemWrite),
-        .ID_rs(IF_ID_Instruction_Out[25:21]),
-        .ID_rt(IF_ID_Instruction_Out[20:16]),
+        .ID_Rs(IF_ID_Instruction_Out[25:21]),
+        .ID_Rt(IF_ID_Instruction_Out[20:16]),
         .ForwardA(ForwardA),
         .ForwardB(ForwardB),
         .ForwardBranchA(ForwardBranchA),
         .ForwardBranchB(ForwardBranchB),
         .ForwardStore(ForwardStore)
     );
-    wire [4:0] EX_Rd;
-    assign EX_Rd = ID_EX_RegDst ? ID_EX_Rd : ID_EX_Rt;
+    
+    
     HazardDetectionUnit m20(
         .clk(Clk),
         .reset(Rst),
@@ -392,7 +410,7 @@ wire BNE_taken = (ID_EX_OpCode == 6'b000101) && (BranchA_EX != BranchB_EX);
         .PC_Write(PC_Write),
         .IF_ID_Write(IF_ID_Write),
         .ID_EX_Flush(ID_EX_Flush),
-        .IF_ID_Flush(IF_ID_Flush)
+        .IF_ID_Flush(IF_ID_FlushHazard)
     );
     
 
@@ -400,9 +418,10 @@ wire BNE_taken = (ID_EX_OpCode == 6'b000101) && (BranchA_EX != BranchB_EX);
     // WB Mux and WriteRegister Override for jal
     // If jal, WriteRegister = $ra (register 31)
     assign MEM_WB_WriteRegister = MEM_WB_Link ? 5'd31 : MEM_WB_Rd;
-    // If jal, RegWriteData = PC + 4, if lw/mem: RegWriteData = ReadData, else R-Type/Imm: ALU_Result
-    assign RegWriteData = MEM_WB_Link ? MEM_WB_PC_AddResult :
-                          MEM_WB_MemToReg ? MEM_WB_DM_ReadData :
-                          MEM_WB_ALU_Result;
+    assign RegWriteData = MEM_WB_RegWrite ? 
+                      (MEM_WB_Link ? MEM_WB_PC_AddResult :
+                       MEM_WB_MemToReg ? MEM_WB_DM_ReadData :
+                       MEM_WB_ALU_Result) :
+                      32'b0;
 
 endmodule
