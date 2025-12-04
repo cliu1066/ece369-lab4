@@ -47,14 +47,11 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     
     wire IF_ID_Flush, IF_ID_FlushHazard, ID_EX_Flush, ID_EX_FlushControl;
     wire ID_EX_Jump, ID_EX_JumpRegister;
-    
-    wire BranchTaken_EX = 1'b0;
-    wire IF_ID_WriteFinal;
 
     IF_ID_Reg m5(
       .Clk(Clk),
       .Rst(Rst),
-      .IF_ID_Write(IF_ID_WriteFinal),
+      .IF_ID_Write(IF_ID_Write),
       .IF_ID_Flush(IF_ID_Flush),
       .Instruction_In(Instruction),
       .PC_In(PC_AddResult),
@@ -166,17 +163,6 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     // RegDst Mux
     assign MEM_WriteReg = EX_MEM_Link ? 5'd31 : EX_MEM_Rd;
 
-    // Shift left 2
-    //wire [31:0] SLL_Out;
-    //ALU32Bit m11(4'b0111, 32'd2, ID_EX_Imm_SE , SLL_Out, 1'b0);
-    //assign SLL_Out = ID_EX_Imm_SE << 2;
-
-    // Branch Target Adder
-    //wire [31:0] BranchTarget;
-    //wire DummyZero;
-    // Branch target address = shift left 2 output + (PC + 4)
-    //ALU32Bit m12(4'b0010, ID_EX_PC_AddResult, SLL_Out, BranchTarget, DummyZero);
-
     // ALUSrc Mux
     wire [31:0] EX_ALUSrc_Out;
     wire [31:0] EX_ALU_A;
@@ -206,18 +192,17 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
                                   
     wire [31:0] BranchA_ID, BranchB_ID;
 
-    // Branch forwarding from EX/MEM or MEM/WB
+    
+    // Branch forwarding - from MEM (non-load) or WB stage
     assign BranchA_ID =
         (ForwardBranchA == 2'b00) ? ReadData1 :
-        (ForwardBranchA == 2'b10) ? EX_MEM_ALU_Result :
-        (ForwardBranchA == 2'b11) ? MEM_DM_ReadData :   // NEW: forward from memory
-                                    RegWriteData;
-    
+        (ForwardBranchA == 2'b10) ? EX_MEM_ALU_Result :  // from MEM (non-load only)
+                                    RegWriteData;         // from WB
+        
     assign BranchB_ID =
         (ForwardBranchB == 2'b00) ? ReadData2 :
-        (ForwardBranchB == 2'b10) ? EX_MEM_ALU_Result :
-        (ForwardBranchB == 2'b11) ? MEM_DM_ReadData :   // NEW: forward from memory
-                                    RegWriteData;
+        (ForwardBranchB == 2'b10) ? EX_MEM_ALU_Result :  // from MEM (non-load only)
+                                    RegWriteData;         // from WB
     
     // Branch target calculation in ID stage
     wire [31:0] ID_BranchOffset_Shifted = Imm_SE << 2;
@@ -236,7 +221,6 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     assign ControlFlowChange_ID = (Branch && BranchTaken_ID) || Jump || JumpRegister;
     
     assign IF_ID_Flush = IF_ID_FlushHazard || ControlFlowChange_ID;
-    assign IF_ID_WriteFinal = IF_ID_Write && !ControlFlowChange_ID;
     
     assign ID_EX_FlushControl = ID_EX_Flush || ControlFlowChange_ID;
     
@@ -304,11 +288,6 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     );
 
     // PCSrc Mux
-    // Current Datapath: ALUZero && Branch -> mux sel signal
-    // Modified: Check BranchALUResult since branch comparisons implemented in ALU
-    // Then check if j, select JumpAddr for PC value
-    // Finally check if jr, select ReadData2 for PC
-    
     wire [31:0] PC_Next;
     assign PC_Next = JumpRegister ? ReadData1 :     // jr uses register value
            Jump ? JumpAddress :                  // j, jal
@@ -316,15 +295,6 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
            PC_AddResult;
            
     assign PC_In = ControlFlowChange_ID ? PC_Next : (PC_Write ? PC_AddResult : PC_Out);
-
-    /*wire [1:0] PCSrc;
-    assign PCSrc = EX_MEM_JumpRegister ? 2'b10 :
-                   EX_MEM_Jump         ? 2'b01 :
-                                         2'b00;
-    Mux32Bit3To1 m21(PC_In, PC_AddResult, EX_MEM_Jump_Addr, EX_MEM_ReadData2, PCSrc);*/
-    
-    // Branch
-    //ALU32Bit m16(4'b0000, EX_MEM_Branch, EX_MEM_ALU_Result[0], PCSrc, 1'b0);
     
     // Data Memory
     // Data memory array initialized with $readmemh("data_memory.mem")
@@ -401,7 +371,6 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
 
         .Branch_ID(Branch),
         .Jump_ID(Jump_ID),
-        .BranchTaken_EX(BranchTaken_EX),
 
         .Forwarding_Enabled(Forwarding_Enabled),
 

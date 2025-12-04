@@ -67,25 +67,20 @@ module ForwardingUnit (
         ForwardBranchA = 2'b00;
         ForwardBranchB = 2'b00;
         
-        // For ID_Rs
-        if (MEM_RegWrite && MEM_WriteReg != 0 && MEM_WriteReg == ID_Rs) begin
-            if (MEM_MemRead)
-                ForwardBranchA = 2'b11;  // NEW: forward from MEM data memory
-            else
-                ForwardBranchA = 2'b10;  // forward from MEM ALU
+        // Forward from MEM stage (non-load only)
+        if (MEM_RegWrite && MEM_WriteReg != 0 && MEM_WriteReg == ID_Rs && !MEM_MemRead) begin
+            ForwardBranchA = 2'b10;
         end
-        else if (WB_RegWrite && WB_WriteReg != 0 && WB_WriteReg == ID_Rs)
+        else if (WB_RegWrite && WB_WriteReg != 0 && WB_WriteReg == ID_Rs) begin
             ForwardBranchA = 2'b01;
-        
-        // For ID_Rt
-        if (MEM_RegWrite && MEM_WriteReg != 0 && MEM_WriteReg == ID_Rt) begin
-            if (MEM_MemRead)
-                ForwardBranchB = 2'b11;  // NEW: forward from MEM data memory
-            else
-                ForwardBranchB = 2'b10;  // forward from MEM ALU
         end
-        else if (WB_RegWrite && WB_WriteReg != 0 && WB_WriteReg == ID_Rt)
+        
+        if (MEM_RegWrite && MEM_WriteReg != 0 && MEM_WriteReg == ID_Rt && !MEM_MemRead) begin
+            ForwardBranchB = 2'b10;
+        end
+        else if (WB_RegWrite && WB_WriteReg != 0 && WB_WriteReg == ID_Rt) begin
             ForwardBranchB = 2'b01;
+        end
     end
 
 endmodule

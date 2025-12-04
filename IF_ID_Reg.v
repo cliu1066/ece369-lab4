@@ -11,12 +11,9 @@ module IF_ID_Reg(Clk, Rst, IF_ID_Write, IF_ID_Flush, Instruction_In, PC_In, Inst
             PC_Out <= 32'd0;
             Instruction_Out <= 32'd0;
         end
-        else if (IF_ID_Flush) begin
-            Instruction_Out <= 32'd0;
-        end
         else if (IF_ID_Write) begin
             PC_Out <= PC_In;
-            Instruction_Out <= Instruction_In;
+            Instruction_Out <= IF_ID_Flush ? 32'd0 : Instruction_In;
         end
     end
     
