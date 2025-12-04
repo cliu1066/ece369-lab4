@@ -9,14 +9,12 @@
 
 module Mux32Bit2To1(out, inA, inB, sel);
 
-    output reg [31:0] out;
+    output [31:0] out;
     
     input [31:0] inA;
     input [31:0] inB;
     input sel;
 
-    always @(*) begin
-        assign out = (sel == 1'b0) ? inA : inB;
-    end
+    assign out = (sel == 1'b0) ? inA : inB;
 
 endmodule
