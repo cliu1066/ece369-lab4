@@ -99,7 +99,8 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     wire RegDst, Jump, JumpRegister, Link, Branch, MemRead, MemToReg, MemWrite, ALUSrc;
     wire [1:0] MemSize; // 00: word, 01: halfword, 10: byte
     wire [3:0] ALUOp;
-    wire [6:0] IF_ID_OpCode = IF_ID_Instruction_Out[31:26];
+    wire [5:0] IF_ID_OpCode = IF_ID_Instruction_Out[31:26];
+    wire [5:0] IF_ID_Funct = IF_ID_Instruction_Out[5:0];
 
     // Controller: input OpCode, Funct, Rt, outputs control signals
     Controller m8 (
@@ -209,11 +210,13 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     assign BranchA_ID =
         (ForwardBranchA == 2'b00) ? ReadData1 :
         (ForwardBranchA == 2'b10) ? EX_MEM_ALU_Result :
+        (ForwardBranchA == 2'b11) ? MEM_DM_ReadData :   // NEW: forward from memory
                                     RegWriteData;
     
     assign BranchB_ID =
         (ForwardBranchB == 2'b00) ? ReadData2 :
         (ForwardBranchB == 2'b10) ? EX_MEM_ALU_Result :
+        (ForwardBranchB == 2'b11) ? MEM_DM_ReadData :   // NEW: forward from memory
                                     RegWriteData;
     
     // Branch target calculation in ID stage
@@ -230,10 +233,10 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     wire BranchTaken_ID = BEQ || BNE || BGTZ || BLEZ || BGEZ || BLTZ;
     
     wire ControlFlowChange_ID;
-    assign ControlFlowChange_ID = ((Branch && BranchTaken_ID) || Jump || JumpRegister) && PC_Write;
+    assign ControlFlowChange_ID = (Branch && BranchTaken_ID) || Jump || JumpRegister;
     
     assign IF_ID_Flush = IF_ID_FlushHazard || ControlFlowChange_ID;
-    assign IF_ID_WriteFinal = IF_ID_Write && !IF_ID_Flush;
+    assign IF_ID_WriteFinal = IF_ID_Write && !ControlFlowChange_ID;
     
     assign ID_EX_FlushControl = ID_EX_Flush || ControlFlowChange_ID;
     
@@ -266,7 +269,6 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
         .Rst(Rst),
         .RegWrite_In(ID_EX_RegWrite),
         .MemToReg_In(ID_EX_MemToReg),
-        .OpCode_In(ID_EX_OpCode),
         .Branch_In(ID_EX_Branch),
         .MemRead_In(ID_EX_MemRead),
         .MemWrite_In(ID_EX_MemWrite),
@@ -285,7 +287,6 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
         
         .RegWrite_Out(EX_MEM_RegWrite),
         .MemToReg_Out(EX_MEM_MemToReg),
-        .OpCode_Out(EX_MEM_OpCode),
         .Branch_Out(EX_MEM_Branch),
         .MemRead_Out(EX_MEM_MemRead),
         .MemWrite_Out(EX_MEM_MemWrite),
@@ -308,16 +309,13 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
     // Then check if j, select JumpAddr for PC value
     // Finally check if jr, select ReadData2 for PC
     
-    wire ControlFlowChange;
-    assign ControlFlowChange = (Branch && BranchTaken_ID) || Jump || JumpRegister;
-    
     wire [31:0] PC_Next;
     assign PC_Next = JumpRegister ? ReadData1 :     // jr uses register value
            Jump ? JumpAddress :                  // j, jal
            (Branch && BranchTaken_ID) ? ID_BranchTarget : // branch target from ID
            PC_AddResult;
            
-    assign PC_In = (PC_Write || ControlFlowChange) ? PC_Next : PC_Out;
+    assign PC_In = ControlFlowChange_ID ? PC_Next : (PC_Write ? PC_AddResult : PC_Out);
 
     /*wire [1:0] PCSrc;
     assign PCSrc = EX_MEM_JumpRegister ? 2'b10 :
@@ -369,6 +367,7 @@ module Top(Clk, Rst, PC_Out, RegWriteData);
         .MEM_WriteReg(MEM_WriteReg),
         .WB_WriteReg(MEM_WB_WriteRegister),
         .MEM_RegWrite(EX_MEM_RegWrite),
+        .MEM_MemRead(EX_MEM_MemRead),
         .WB_RegWrite(MEM_WB_RegWrite),
         .EX_isStore(ID_EX_MemWrite),
         .ID_Rs(IF_ID_Instruction_Out[25:21]),
