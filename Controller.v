@@ -16,7 +16,6 @@ module Controller(OpCode, Funct, RegDst, Jump, JumpRegister, Link, Branch, MemRe
     output reg [3:0] ALUOp;
     output reg [1:0] MemSize;
     
-    /* Fill in the implementation here ... */
     always@(*) begin
         RegDst = 1'b0;
         ALUSrc = 1'b0;
@@ -64,300 +63,114 @@ module Controller(OpCode, Funct, RegDst, Jump, JumpRegister, Link, Branch, MemRe
                 case (Funct)
                     6'b000010: begin
                         RegDst = 1'b1;
-                        ALUSrc = 1'b0;
-                        MemToReg = 1'b0;
                         RegWrite = 1'b1;
-                        MemRead = 1'b0;
-                        MemWrite = 1'b0;
-                        Branch = 1'b0;
-                        Jump = 1'b0;
-                        JumpRegister = 1'b0;
-                        Link = 1'b0;
                         ALUOp = 4'b1001;
-                        MemSize = 2'b00;
                     end
                 endcase
             end
             
             // Immediate 
-            6'b001000 : begin // addi
-                RegDst = 1'b0;
+            6'b001000 : begin // add
                 ALUSrc = 1'b1;
-                MemToReg= 1'b0;
                 RegWrite= 1'b1;
-                MemRead = 1'b0;
-                MemWrite= 1'b0;
-                Branch = 1'b0;
                 ALUOp = 4'b0010;
-                Jump = 1'b0;
-                JumpRegister = 1'b0;
-                Link = 1'b0;
             end
 
             6'b001100 : begin // andi
-                RegDst = 1'b0;
                 ALUSrc = 1'b1;
-                MemToReg= 1'b0;
                 RegWrite= 1'b1;
-                MemRead = 1'b0;
-                MemWrite= 1'b0;
-                Branch = 1'b0;
                 ALUOp = 4'b0000;
-                Jump = 1'b0;
-                JumpRegister = 1'b0;
-                Link = 1'b0;
             end
 
             6'b001101 : begin // ori
-                RegDst = 1'b0;
                 ALUSrc = 1'b1;
-                MemToReg= 1'b0;
                 RegWrite= 1'b1;
-                MemRead = 1'b0;
-                MemWrite= 1'b0;
-                Branch = 1'b0;
                 ALUOp = 4'b0001;
-                Jump = 1'b0;
-                JumpRegister = 1'b0;
-                Link = 1'b0;
             end
 
             6'b001010 : begin // slti
-                RegDst = 1'b0;
                 ALUSrc = 1'b1;
-                MemToReg= 1'b0;
                 RegWrite= 1'b1;
-                MemRead = 1'b0;
-                MemWrite= 1'b0;
-                Branch = 1'b0;
                 ALUOp = 4'b0100;
-                Jump = 1'b0;
-                JumpRegister = 1'b0;
-                Link = 1'b0;
             end
 
             6'b001110 : begin // xori
-                RegDst = 1'b0;
                 ALUSrc = 1'b1;
-                MemToReg= 1'b0;
                 RegWrite= 1'b1;
-                MemRead = 1'b0;
-                MemWrite= 1'b0;
-                Branch = 1'b0;
                 ALUOp =  4'b0110;
-                Jump = 1'b0;
-                JumpRegister = 1'b0;
-                Link = 1'b0;
             end
             
             // Data
             6'b100011 : begin // lw
-                RegDst = 1'b0;
                 ALUSrc = 1'b1;
                 MemToReg= 1'b1;
                 RegWrite= 1'b1;
                 MemRead = 1'b1;
-                MemWrite= 1'b0;
-                Branch = 1'b0;
                 ALUOp = 4'b0010;
-                Jump = 1'b0;
-                JumpRegister = 1'b0;
-                Link = 1'b0;
                 MemSize = 2'b00;
             end
             
             6'b101011 : begin // sw
-                RegDst = 1'b0;
                 ALUSrc = 1'b1;
-                MemToReg= 1'b0;
-                RegWrite= 1'b0;
-                MemRead = 1'b0;
                 MemWrite= 1'b1;
                 Branch = 1'b0;
                 ALUOp = 4'b0010;
-                Jump = 1'b0;
-                JumpRegister = 1'b0;
-                Link = 1'b0;
                 MemSize = 2'b00;
             end
             
             6'b101000 : begin // sb
-                RegDst = 1'b0;
                 ALUSrc = 1'b1;
-                MemToReg= 1'b0;
-                RegWrite= 1'b0;
-                MemRead = 1'b0;
                 MemWrite= 1'b1;
-                Branch = 1'b0;
                 ALUOp = 4'b0010;
-                Jump = 1'b0;
-                JumpRegister = 1'b0;
-                Link = 1'b0;
                 MemSize = 2'b10;
             end
 
             6'b100001 : begin // lh
-                RegDst = 1'b0;
                 ALUSrc = 1'b1;
                 MemToReg= 1'b1;
                 RegWrite= 1'b1;
                 MemRead = 1'b1;
-                MemWrite= 1'b0;
-                Branch = 1'b0;
                 ALUOp = 4'b0010;
-                Jump = 1'b0;
-                JumpRegister = 1'b0;
-                Link = 1'b0;
                 MemSize = 2'b01;
             end
 
             6'b100000 : begin // lb
-                RegDst = 1'b0;
                 ALUSrc = 1'b1;
                 MemToReg= 1'b1;
                 RegWrite= 1'b1;
                 MemRead = 1'b1;
-                MemWrite= 1'b0;
-                Branch = 1'b0;
                 ALUOp = 4'b0010;
-                Jump = 1'b0;
-                JumpRegister = 1'b0;
-                Link = 1'b0;
                 MemSize = 2'b10;
             end
 
             6'b101001 : begin // sh
-                RegDst = 1'b0;
                 ALUSrc = 1'b1;
-                MemToReg= 1'b0;
-                RegWrite= 1'b0;
-                MemRead = 1'b0;
                 MemWrite= 1'b1;
-                Branch = 1'b0;
                 ALUOp = 4'b0010;
-                Jump = 1'b0;
-                JumpRegister = 1'b0;
-                Link = 1'b0;
                 MemSize = 2'b01;
             end
             
             // Branch
-            6'b000001 : begin // bgez, bltz
-                RegDst = 1'b0;
-                ALUSrc = 1'b0;
-                MemToReg= 1'b0;
-                RegWrite= 1'b0;
-                MemRead = 1'b0;
-                MemWrite= 1'b0;
-                Branch = 1'b1;
-                Jump = 1'b0;
-                JumpRegister = 1'b0;
-                Link = 1'b0;
-                case (Rt)
-                    5'b00001 : ALUOp = 4'b1010; // bgez
-                    5'b00000 : ALUOp = 4'b1111; // bltz
-                    default : ALUOp = 4'b0010;
-                endcase
-            end
-            
-            6'b000100 : begin // beq
-                RegDst = 1'b0;
-                ALUSrc = 1'b0;
-                MemToReg= 1'b0;
-                RegWrite= 1'b0;
-                MemRead = 1'b0;
-                MemWrite= 1'b0;
-                Branch = 1'b1;
-                ALUOp = 4'b1011;
-                Jump = 1'b0;
-                JumpRegister = 1'b0;
-                Link = 1'b0;
-            end
-            
-            6'b000101 : begin // bne
-                RegDst = 1'b0;
-                ALUSrc = 1'b0;
-                MemToReg= 1'b0;
-                RegWrite= 1'b0;
-                MemRead = 1'b0;
-                MemWrite= 1'b0;
-                Branch = 1'b1;
-                ALUOp = 4'b1100;
-                Jump = 1'b0;
-                JumpRegister = 1'b0;
-                Link = 1'b0;
-            end
+            6'b000001: Branch = 1'b1; // bgez, bltz
+            6'b000100: Branch = 1'b1; // beq
+            6'b000101: Branch = 1'b1; // bne
+            6'b000111: Branch = 1'b1; // bgtz
+            6'b000110: Branch = 1'b1; // blez
 
-            6'b000111 : begin // bgtz
-                RegDst = 1'b0;
-                ALUSrc = 1'b0;
-                MemToReg= 1'b0;
-                RegWrite= 1'b0;
-                MemRead = 1'b0;
-                MemWrite= 1'b0;
-                Branch = 1'b1;
-                ALUOp =  4'b1101;
-                Jump = 1'b0;
-                JumpRegister = 1'b0;
-                Link = 1'b0;
-            end
-
-            6'b000110 : begin // blez
-                RegDst = 1'b0;
-                ALUSrc = 1'b0;
-                MemToReg= 1'b0;
-                RegWrite= 1'b0;
-                MemRead = 1'b0;
-                MemWrite= 1'b0;
-                Branch = 1'b1;
-                ALUOp = 4'b1110;
-                Jump = 1'b0;
-                JumpRegister = 1'b0;
-                Link = 1'b0;
-            end
-
+            // Jump
             6'b000010 : begin // j
-                RegDst = 1'b0;
-                ALUSrc = 1'b0;
-                MemToReg= 1'b0;
-                RegWrite= 1'b0;
-                MemRead = 1'b0;
-                MemWrite= 1'b0;
-                Branch = 1'b0;
                 ALUOp = 4'b0010;
                 Jump = 1'b1;
-                JumpRegister = 1'b0;
-                Link = 1'b0;
             end
 
             6'b000011 : begin // jal
-                RegDst = 1'b0;
-                ALUSrc = 1'b0;
-                MemToReg= 1'b0;
-                RegWrite= 1'b0;
-                MemRead = 1'b0;
-                MemWrite= 1'b0;
-                Branch = 1'b0;
                 ALUOp = 4'b0010;
                 Jump = 1'b1;
-                JumpRegister = 1'b0;
                 Link = 1'b1;
             end
 
-            default : begin 
-                RegDst = 1'b0;
-                ALUSrc = 1'b0;
-                MemToReg= 1'b0;
-                RegWrite= 1'b0;
-                MemRead = 1'b0;
-                MemWrite= 1'b0;
-                Branch = 1'b0;
-                ALUOp = 4'b0010;
-                Jump = 1'b0;
-                JumpRegister = 1'b0;
-                Link = 1'b0;
-            end
-                
+            default; 
+            
         endcase
     end
 
