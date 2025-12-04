@@ -73,22 +73,21 @@ module HazardDetectionUnit (
 
         //branch hazard
         if (Branch_ID) begin
-            // Common: stall when EX is a load writing a register branch needs
-            if (EX_MemRead && ((EX_rd == ID_rs) || (EX_rd == ID_rt))) begin
-                branch_dep_hazard = 1;
-            end
-            // If forwarding not available to ID, also stall for EX_RegWrite dependencies
-            else if (!Forwarding_Enabled) begin
-                if (EX_RegWrite && (EX_rd != 5'd0) &&
-                   ((EX_rd == ID_rs) || (EX_rd == ID_rt))) begin
-                    branch_dep_hazard = 1;
-                end
-                // Optionally check MEM stage load if pipeline can't forward from MEM to ID
-                if (MEM_MemRead && ((MEM_rd == ID_rs) || (MEM_rd == ID_rt))) begin
-                    branch_dep_hazard = 1;
-                end
-            end
+    // Priority 1: EX stage load (must stall, data not ready yet)
+    if (EX_MemRead && ((EX_rd == ID_rs) || (EX_rd == ID_rt))) begin
+        branch_dep_hazard = 1;
         end
+        // Priority 2: EX stage ALU op (must stall, cannot forward from EX to ID)
+        else if (EX_RegWrite && (EX_rd != 5'd0) &&
+                 ((EX_rd == ID_rs) || (EX_rd == ID_rt))) begin
+            branch_dep_hazard = 1;  // ← THIS WAS MISSING!
+        end
+        // Priority 3: MEM stage load (can forward with 2'b11 if forwarding enabled)
+        else if (!Forwarding_Enabled && MEM_MemRead && 
+                 ((MEM_rd == ID_rs) || (MEM_rd == ID_rt))) begin
+            branch_dep_hazard = 1;
+        end
+    end
 
         //combine hazards
         if (load_use_hazard || branch_dep_hazard || alu_dep_hazard || store_data_hazard) begin
