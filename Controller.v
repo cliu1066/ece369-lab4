@@ -59,7 +59,7 @@ module Controller(OpCode, Funct, RegDst, Jump, JumpRegister, Link, Branch, MemRe
                 endcase
             end
             
-            6'b011100 : begin
+            6'b011100 : begin   // mul
                 case (Funct)
                     6'b000010: begin
                         RegDst = 1'b1;
@@ -70,7 +70,7 @@ module Controller(OpCode, Funct, RegDst, Jump, JumpRegister, Link, Branch, MemRe
             end
             
             // Immediate 
-            6'b001000 : begin // add
+            6'b001000 : begin // addi
                 ALUSrc = 1'b1;
                 RegWrite= 1'b1;
                 ALUOp = 4'b0010;
@@ -164,6 +164,7 @@ module Controller(OpCode, Funct, RegDst, Jump, JumpRegister, Link, Branch, MemRe
             end
 
             6'b000011 : begin // jal
+                RegWrite = 1'b1;
                 ALUOp = 4'b0010;
                 Jump = 1'b1;
                 Link = 1'b1;
